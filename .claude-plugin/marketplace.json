@@ -1,11 +1,11 @@
 {
-  "name": "rmendes-mods",
+  "name": "apoema-claude-mods",
   "metadata": {
     "description": "Claude Code mods (TypeScript plugins) for the prompt band, panes, plan tracking and model fit",
     "version": "1.0.0"
   },
   "owner": {
-    "name": "rmendes"
+    "name": "apoema"
   },
   "plugins": [
     {

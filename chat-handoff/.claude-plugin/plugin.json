@@ -1,10 +1,10 @@
 {
   "name": "chat-handoff",
   "version": "0.4.0",
-  "description": "When a chat reaches a token threshold (250k by default, set in the plugin's config), offers Refresh: writes a handoff of the whole chat, shows the steps with progress bars, then copies it or starts a new chat with it. Saves a draft first and logs every run to ~/.claude/handoffs/handoff.log",
   "author": {
-    "name": "Investor Team"
+    "name": "apoema"
   },
+  "description": "When a chat reaches a token threshold (250k by default, set in the plugin's config), offers Refresh: writes a handoff of the whole chat, shows the steps with progress bars, then copies it or starts a new chat with it. Saves a draft first and logs every run to ~/.claude/handoffs/handoff.log",
   "types": "./types/index.d.ts",
   "userConfig": {
     "offerAtTokens": {

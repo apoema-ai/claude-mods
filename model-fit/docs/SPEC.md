@@ -1,6 +1,6 @@
 # model-fit: design spec
 
-**Status:** design approved, not built. **Author:** rmendes. **Date:** 2026-11-05.
+**Status:** design approved, not built. **Date:** 2026-11-05.
 Terms in bold are defined in [GLOSSARY.md](../GLOSSARY.md).
 
 ## Goal
@@ -9,7 +9,7 @@ A Claude Code mod that checks whether the main chat's **Setting** (its model and
 
 ## Packaging
 
-- A plugin of its own. The source lives at `~/workspace/lab/claude-mods/model-fit`, and `~/llm-context/plugins/model-fit` is a symlink to it, so it sits in llm-context next to `plugins/chat-deck` and is published to `upgrade-claude-code-plugins-marketplace` from there. It shares no code or state with chat-deck or any other mod.
+- A plugin of its own, published through the `apoema-claude-mods` marketplace. It shares no code or state with chat-deck or any other mod.
 - Built like the existing mods: `.claude-plugin/plugin.json` (with `userConfig`), `hooks/hooks.json`, `hooks/register.tsx`, `hooks/register.test.tsx`, `types/`, `tsconfig.json`, `README.md`.
 - The README says what the mod sends: when the Trigger is not Off, it sends the new prompt and a short session digest to Haiku through the session's own API client, runs `/model` and `/effort`, and writes a log to `~/.claude/mods-logs/model-fit.log`.
 
@@ -32,7 +32,7 @@ A Claude Code mod that checks whether the main chat's **Setting** (its model and
 
 1. **Fixed skill** (when a skill starts, under On skill or Each prompt): if the skill is in the Rubric's skill-to-model table, the model comes straight from the table and effort stays as it is. No Judge call, no two-in-a-row wait; the cache guard still applies.
 2. Otherwise the **Judge** runs: one `$.model.complete({ model: "haiku", ... })` call. Its input is the new prompt (or skill name and args), recent turn stats (tool calls, files touched, context size) and the current Setting. It returns a model, an effort and a one-line reason naming the signal that fired.
-3. **Rubric**: the built-in default is a copy of rmendes's CLAUDE.md model policy as of 2026-11-05, stored in the plugin: the haiku / sonnet / opus table, the runtime escalation signals for opus, and the superpowers skill-to-model table. The mod never reads the installer's CLAUDE.md. When the `rubricFile` option names a Markdown file, its text replaces the built-in Rubric.
+3. **Rubric**: the built-in default is a copy of the author's CLAUDE.md model policy as of 2026-11-05, stored in the plugin: the haiku / sonnet / opus table, the runtime escalation signals for opus, and the superpowers skill-to-model table. The mod never reads the installer's CLAUDE.md. When the `rubricFile` option names a Markdown file, its text replaces the built-in Rubric.
 
 ### Guards
 
@@ -74,8 +74,8 @@ A Claude Code mod that checks whether the main chat's **Setting** (its model and
 ## Verification and release
 
 1. `claude plugin validate`, the security scan, `tsc`, `claude plugin test` (with `register.test.tsx` covering the guards, the Fixed skill path, Pause and Judge failure).
-2. A try-out with `claude --plugin-dir ~/llm-context/plugins/model-fit`. `CLAUDE_CODE_PLUGIN_DIRS` in `~/.claude/settings.json` is not edited.
-3. Publishing to `upgrade-claude-code-plugins-marketplace` only on the author's explicit go. Git stores `plugins/model-fit` as a symlink to a local path, so the symlink itself is never committed: at release, the real files are copied into llm-context in its place.
+2. A try-out with `claude --plugin-dir <path to model-fit>`. `CLAUDE_CODE_PLUGIN_DIRS` in `~/.claude/settings.json` is not edited.
+3. Publishing to `apoema-claude-mods` only on the author's explicit go.
 
 ## Built 2026-11-05 (v0.1.0)
 

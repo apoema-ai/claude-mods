@@ -1,9 +1,9 @@
 {
   "name": "cache-timer",
   "version": "0.5.0",
-  "description": "Counts down until the chat's prompt cache goes cold, above the prompt, and can keep it warm with a small background ping. The cache length is read from the chat's transcript, in TypeScript, so it works on any platform",
   "author": {
-    "name": "Investor Team"
+    "name": "apoema"
   },
+  "description": "Counts down until the chat's prompt cache goes cold, above the prompt, and can keep it warm with a small background ping. The cache length is read from the chat's transcript, in TypeScript, so it works on any platform",
   "types": "./types/index.d.ts"
 }

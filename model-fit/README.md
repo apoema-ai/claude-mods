@@ -30,7 +30,7 @@ With Auto on, the prompt waits up to 3 seconds for the Judge, the current turn's
 ## Use it
 
 ```
-/plugin install model-fit@upgrade-claude-code-plugins-marketplace
+/plugin install model-fit@apoema-claude-mods
 /reload-plugins
 /modelfit
 ```

@@ -7,7 +7,8 @@ Tested with Claude Code 2.1.314 (mods API, early access).
 ## Install
 
 ```
-/plugin install chat-handoff --marketplace <owner>/<repo>
+/plugin marketplace add <owner>/<repo>
+/plugin install chat-handoff@apoema-claude-mods
 ```
 
 ## What it does

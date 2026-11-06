@@ -1,10 +1,10 @@
 {
   "name": "chat-deck",
   "version": "0.10.0",
-  "description": "Chat Deck: a live agent dashboard for Claude Code. Main model vitals, the task plan as a progress bar (absorbed from plan-bar), the session folder's git branch, PR and uncommitted files, an on-call architect, every permission check, the last build and test runs, the files edited, subagent cards with pixel crabs and swimlanes, the messages between the main chat and its subagents drawn as a graph, a turn receipt and a session log, all from real session events",
   "author": {
-    "name": "rmendes"
+    "name": "apoema"
   },
+  "description": "Chat Deck: a live agent dashboard for Claude Code. Main model vitals, the task plan as a progress bar (absorbed from plan-bar), the session folder's git branch, PR and uncommitted files, an on-call architect, every permission check, the last build and test runs, the files edited, subagent cards with pixel crabs and swimlanes, the messages between the main chat and its subagents drawn as a graph, a turn receipt and a session log, all from real session events",
   "license": "MIT",
   "keywords": [
     "claude-code",

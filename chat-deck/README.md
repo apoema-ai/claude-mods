@@ -6,16 +6,16 @@ A Claude Code mod (function hooks, Claude Code 2.1.287+) that keeps a live pane 
 
 ## Inspirations
 
-chat-deck is rmendes's own mod, and it owes its ideas to others:
+chat-deck owes its ideas to others:
 
 - [claude-flightdeck](https://github.com/scasella/claude-flightdeck) by Stephen Casella: the live pane of vitals, gate, architect, cards and swimlanes. chat-deck started from its source, which is MIT-licensed, so his copyright notice stays in `LICENSE`.
 - [zoetrope](https://github.com/furkankly/zoetrope) by furkankly: drawing a session as a flow graph, with a node per agent, animated edges, tool chips, the prompt that spawned an agent, and a timeline to look back on. Only its ideas were used; no code was taken.
-- The `agents-deck` and `plan-bar` mods of the Investor team: the pixel-crab cards and the emerald-to-teal meter.
+- The earlier `agents-deck` and `plan-bar` mods: the pixel-crab cards and the emerald-to-teal meter.
 
 ## Install
 
 ```
-/plugin install chat-deck@upgrade-claude-code-plugins-marketplace
+/plugin install chat-deck@apoema-claude-mods
 /reload-plugins
 /chatdeck
 ```

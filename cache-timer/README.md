@@ -7,7 +7,8 @@ Tested with Claude Code 2.1.318 (mods API, early access).
 ## Install
 
 ```
-/plugin install cache-timer --marketplace <owner>/<repo>
+/plugin marketplace add <owner>/<repo>
+/plugin install cache-timer@apoema-claude-mods
 ```
 
 ## What it does

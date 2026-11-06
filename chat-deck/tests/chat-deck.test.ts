@@ -1521,8 +1521,8 @@ test('a graphical surface draws the context meter and no second time axis; the t
 
 // What rtk's mvn filter returns for a failing run (captured from rtk 2026-11, its compact form).
 const MAVEN_RTK_FAIL = `[INFO] Scanning for projects...
-[INFO] Running com.credify.ims.BarServiceTest
-[ERROR] Tests run: 5, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 0.5 s <<< FAILURE! - in com.credify.ims.BarServiceTest
+[INFO] Running com.example.app.BarServiceTest
+[ERROR] Tests run: 5, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 0.5 s <<< FAILURE! - in com.example.app.BarServiceTest
 org.opentest4j.AssertionFailedError: expected: <1> but was: <2>
 [INFO] Results:
 [ERROR] Failures:
@@ -1539,7 +1539,7 @@ const MAVEN_PASS = `[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Tim
 [INFO] BUILD SUCCESS`
 
 test('a build or test run is read from Bash output: Maven (raw or rtk), jest, vitest, bun, tsc', () => {
-  expect(parseTestRun('rtk mvn test -pl investor-mgt-srvc-server', MAVEN_RTK_FAIL, true)).toEqual({ kind: 'maven', passed: 13, failed: 1, skipped: 1, isOk: false })
+  expect(parseTestRun('rtk mvn test -pl app-server', MAVEN_RTK_FAIL, true)).toEqual({ kind: 'maven', passed: 13, failed: 1, skipped: 1, isOk: false })
   expect(parseTestRun('mvn verify', MAVEN_PASS, false)).toEqual({ kind: 'maven', passed: 16, failed: 0, skipped: 1, isOk: true })
   expect(parseTestRun('cd x && ./mvnw compile -q', '[ERROR] COMPILATION ERROR :\n[INFO] BUILD FAILURE', true)).toEqual({ kind: 'maven', passed: null, failed: 0, skipped: 0, isOk: false })
   // A goal that builds nothing is not a check; neither is a command that only mentions one.
@@ -1823,12 +1823,12 @@ test('parallel agents with one description prefix are told apart by their type, 
   const mk = (id: string, type: string, description: string) => ({ id, type, description }) as never
   const all = [
     mk('1', 'pr-review-toolkit:silent-failure-hunter', 'Wave 1: silent failures'),
-    mk('2', 'investor-workflow:investor-ac-reviewer', 'Wave 1: investigate ac'),
-    mk('3', 'investor-workflow:investor-ac-reviewer', 'Wave 1: investigate ac again'),
-    mk('5', 'investor-workflow:investor-boundary-reviewer', 'Wave 1: investigate boundaries'),
+    mk('2', 'team:ac-reviewer', 'Wave 1: investigate ac'),
+    mk('3', 'team:ac-reviewer', 'Wave 1: investigate ac again'),
+    mk('5', 'team:boundary-reviewer', 'Wave 1: investigate boundaries'),
     mk('4', 'general-purpose', 'Run the tests'),
   ]
-  expect(all.map(c => cardLabel(c, all))).toEqual(['Wave 1: silent failures', 'investor-ac-reviewer 1', 'investor-ac-reviewer 2', 'investor-boundary-reviewer', 'Run the tests'])
+  expect(all.map(c => cardLabel(c, all))).toEqual(['Wave 1: silent failures', 'ac-reviewer 1', 'ac-reviewer 2', 'boundary-reviewer', 'Run the tests'])
   // 0.5.1: twins of one type keep their own words past the shared ones; alike titles fall back to numbers.
   const same = [mk('a', 'general-purpose', 'Investigate auth token refresh'), mk('b', 'general-purpose', 'Investigate payment retries')]
   expect(same.map(c => cardLabel(c, same))).toEqual(['auth token refresh', 'payment retries'])

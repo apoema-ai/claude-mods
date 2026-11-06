@@ -59,7 +59,7 @@
 
 ## 0.4.1
 
-- Parallel agents that share a description prefix ("Wave 1: ...") are named by their agent type (`investor-ac-reviewer`), numbered when the type matches too, in the agent rows, the comms graph and the log.
+- Parallel agents that share a description prefix ("Wave 1: ...") are named by their agent type (`ac-reviewer`), numbered when the type matches too, in the agent rows, the comms graph and the log.
 - The turn's slowest calls leave out `AskUserQuestion`: its time is your answer, not a slow call.
 
 ## 0.4.0
@@ -93,7 +93,7 @@
 - Arrows into or out of a running agent are dashed, with moving dashes where the surface plays SVG animation.
 - Tool chips (`Bash ×5 · Edit ×2`) under each agent in the graph and in its expanded card, which also shows the full spawn prompt.
 - The architect agent is a node in the graph, and its prompt and messages are listed.
-- Author is rmendes; flightdeck, zoetrope, agents-deck and plan-bar are credited as inspirations.
+- flightdeck, zoetrope, agents-deck and plan-bar are credited as inspirations.
 
 ## 0.1.0
 

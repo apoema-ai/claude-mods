@@ -24,7 +24,7 @@ A pane for a Claude Code chat that shows, beside the usual session vitals and su
 
 - claude-flightdeck (Stephen Casella, MIT): the pane, its panels and its test rig. The source was the starting point, so its copyright notice stays in `LICENSE`.
 - zoetrope (furkankly): the flow graph, animated edges, tool chips, the prompt that spawned an agent, the timeline. Ideas only; no code taken.
-- `agents-deck` and `plan-bar` (Investor team): the pixel-crab cards and the meter.
+- The earlier `agents-deck` and `plan-bar` mods: the pixel-crab cards and the meter.
 
 ## Events used
 

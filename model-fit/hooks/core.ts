@@ -96,7 +96,7 @@ export const drifted = (last: Setting | undefined, now: Setting) =>
 
 // ---------- The Judge ----------
 
-/** A copy of rmendes's model policy as of 2026-11-05; `rubricFile` replaces it. */
+/** A copy of the author's model policy as of 2026-11-05; `rubricFile` replaces it. */
 export const DEFAULT_RUBRIC = `Pick the cheapest model and effort that fit the task.
 - haiku: bounded, deterministic work with minimal reasoning: grep or search, log parsing, lint or format fixes, running a script or tests and reporting, simple transforms. Only for clearly trivial work.
 - sonnet (the default): reading, understanding or writing code with judgment: code review, refactoring, writing tests, multi-step workflows, debugging, synthesis, planning a small change.
