@@ -1,6 +1,6 @@
 # chat-deck
 
-**Version:** 0.5.1
+**Version:** 0.11.0
 
 A Claude Code mod (function hooks, Claude Code 2.1.287+) that keeps a live pane of the whole chat beside the transcript: the main model's vitals, every permission check, subagent cards, and the messages the main chat and its subagents send each other. Every number and line comes from a real session event, and nothing leaves your machine.
 
@@ -17,7 +17,7 @@ chat-deck owes its ideas to others:
 ```
 /plugin install chat-deck@apoema-claude-mods
 /reload-plugins
-/chatdeck
+/chat-deck
 ```
 
 To try a clone for one session: `claude --plugin-dir <path to this folder>`.
@@ -69,7 +69,7 @@ Wide (110 columns and up), the left column holds what is happening now and what 
 - Text is masked for credentials before it is stored, shortened, and kept in the pane's state (the last 80 messages). `/clear` forgets them.
 - A recipient is matched by agent id, then by the name it was spawned under. A message nobody received is not recorded.
 
-`/chatdeck` opens the pane, `/chatdeck close` closes it, `/chatdeck reset` clears it, and `/chatdeck layout auto|compact|wide|mini` sets the layout.
+`/chat-deck` opens the pane, `/chat-deck close` closes it, `/chat-deck reset` clears it, and `/chat-deck layout auto|compact|wide|mini` sets the layout.
 
 `/chat-deck off` turns the whole mod off in every chat and `/chat-deck on` turns it back on; `/chat-deck status` says which. It writes `"chat-deck": false` to `~/.claude/mods/switches.json` (on removes the key) and reads that file every 3 seconds, so an open chat follows. Off closes the pane and keeps it closed, clears the status line, stops the git reads, makes the plan tool answer that Chat Deck is off, and records nothing from the session's hooks. On opens the pane again when `openOnStart` is set. The plan, the log and the other panels are not kept while it is off.
 
@@ -77,7 +77,7 @@ Wide (110 columns and up), the left column holds what is happening now and what 
 
 `/config` lists five options: `architectPattern` (which agent types count as the architect), `paneColumns`, `layout`, `palette` and `openOnStart`.
 
-Which panels show is not a setting. The **panels** button sits in the header row, on every layout (the inline summary too), and `p` opens or closes the list under it: a button per panel, every one but itself. Closed, it is just `▸ panels` and says how many panels are hidden. The choice is kept across `/chatdeck reset` and between sessions. Hiding a panel only stops drawing it: the plan tool and the git reads keep working.
+Which panels show is not a setting. The **panels** button sits in the header row, on every layout (the inline summary too), and `p` opens or closes the list under it: a button per panel, every one but itself. Closed, it is just `▸ panels` and says how many panels are hidden. The choice is kept across `/chat-deck reset` and between sessions. Hiding a panel only stops drawing it: the plan tool and the git reads keep working.
 
 ## What it reads
 
@@ -103,6 +103,8 @@ It reads session events, and sends nothing of its own. It makes no tool calls. I
 
 ## Version History
 
+- **0.11.0** (2026-11-06): one command, `/chat-deck`, replaces `/chatdeck`, which is gone.
+- **0.10.0** (2026-11-06): `/chat-deck on|off|status` turns the mod on or off in every chat; hooks that fail pass the event through.
 - **0.9.0** (2026-11-06): config cut from 13 options to 5; a collapsible panels row turns each panel on or off from inside the pane.
 - **0.8.0** (2026-11-06): one card header everywhere (fold chevron, plain title, dim detail, status on the right), colour for status only, counts that say their scope, the turn's clock on the main card, a one-line gate while all is allowed, a one-line architect, the plan's count off its bar and a step list, a log that names every sender with a failed-calls filter, middle-cut paths and commands that copy when pressed, header chips that jump to their panel, balanced wide columns, and a new default panel order.
 - **0.7.0** (2026-11-05): a plan panel absorbed from the plan-bar mod, replacing its band above the prompt; one plan row in the inline summary; `plan n/m` on the status line.

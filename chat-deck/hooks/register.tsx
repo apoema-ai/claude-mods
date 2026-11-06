@@ -913,7 +913,7 @@ function planPromptSubmitted(e: { text: string; command?: unknown; isMeta?: unkn
       staleNudged = false
 }
 
-/** /clear and /chatdeck reset: the next plan starts from nothing. The saved file stays for chat-inventory. */
+/** /clear and /chat-deck reset: the next plan starts from nothing. The saved file stays for chat-inventory. */
 async function planReset($: EngineInterface) {
       holdTimer?.cancel()
       holdTimer = null
@@ -948,13 +948,8 @@ export const register: Register = (on, options) => {
     }
     await $.command.register({
       name: 'chat-deck',
-      description: 'Chat Deck: turn the mod on or off in every chat. "/chat-deck off" switches it off, "/chat-deck on" brings it back',
-      argumentHint: '[on|off|status]',
-    })
-    await $.command.register({
-      name: 'chatdeck',
-      description: 'Chat Deck, the live agent dashboard: open, close, reset, or set the layout',
-      argumentHint: '[open|close|reset|layout auto|compact|wide|mini]',
+      description: 'Chat Deck, the live agent dashboard: open, close, reset, set the layout, or turn the mod on or off in every chat',
+      argumentHint: '[open|close|reset|layout auto|compact|wide|mini|on|off|status]',
     })
     await migrate($)
     // A host without usage (headless, an SDK host, a session not yet bound) just starts without it.
@@ -1001,16 +996,15 @@ export const register: Register = (on, options) => {
   })
 
   on('command.run', { command: 'chat-deck' }, async ($, e) => {
-    const arg = e.args.trim().toLowerCase()
-    if (arg !== 'on' && arg !== 'off') return { text: `Chat Deck is ${isOff ? 'off' : 'on'}. Type /chat-deck ${isOff ? 'on' : 'off'} to turn it ${isOff ? 'on' : 'off'}.` }
-    if (!(await writeSwitch($, arg === 'on'))) return { text: 'Chat Deck: could not write ~/.claude/mods/switches.json, so nothing changed.' }
-    await pollSwitch($, cfg)
-    return { text: arg === 'on' ? 'Chat Deck is on.' : 'Chat Deck is off in every chat. Type /chat-deck on to turn it on again.' }
-  })
-
-  on('command.run', { command: 'chatdeck' }, async ($, e) => {
+    const [verb = 'open', arg = ''] = e.args.trim().toLowerCase().split(/\s+/).filter(Boolean)
+    // on and off switch the mod in every chat; status says which; the rest work only while it is on.
+    if (verb === 'status') return { text: `Chat Deck is ${isOff ? 'off' : 'on'}. Type /chat-deck ${isOff ? 'on' : 'off'} to turn it ${isOff ? 'on' : 'off'}.` }
+    if (verb === 'on' || verb === 'off') {
+      if (!(await writeSwitch($, verb === 'on'))) return { text: 'Chat Deck: could not write ~/.claude/mods/switches.json, so nothing changed.' }
+      await pollSwitch($, cfg)
+      return { text: verb === 'on' ? 'Chat Deck is on.' : 'Chat Deck is off in every chat. Type /chat-deck on to turn it on again.' }
+    }
     if (isOff) return { text: 'Chat Deck is off. Type /chat-deck on to turn it on.' }
-    const [verb = 'open', arg = ''] = e.args.trim().split(/\s+/)
     if (verb === 'close') {
       await $.ui.close({ id: PANE })
       return { text: 'Chat Deck closed.' }
@@ -1023,7 +1017,7 @@ export const register: Register = (on, options) => {
     }
     if (verb === 'layout') {
       const layout: Layout | null = arg === 'compact' || arg === 'wide' || arg === 'auto' || arg === 'mini' ? arg : null
-      if (!layout) return { text: 'Usage: /chatdeck layout auto|compact|wide|mini' }
+      if (!layout) return { text: 'Usage: /chat-deck layout auto|compact|wide|mini' }
       await update($, view, v => ({ ...normalize(DEFAULT_VIEW, v), layout }))
       const opened = await openPane($, cfg)
       return { text: opened.isPlaced ? `Chat Deck layout: ${layout}.` : `Layout set to ${layout}; the pane is not shown yet: ${opened.reason}` }
@@ -2804,7 +2798,7 @@ export const register: Register = (on, options) => {
             </Box>
           ))}
           {cards.length > live.length ? (
-            <Text color={C.dim} wrap="truncate">{`+${cards.length - live.length} more agents · /chatdeck layout compact for all`}</Text>
+            <Text color={C.dim} wrap="truncate">{`+${cards.length - live.length} more agents · /chat-deck layout compact for all`}</Text>
           ) : null}
           {lp.length > 0 ? <Text dimColor wrap="truncate">{`other loops ${lp.length} · ${lp.filter(l => isLoopActive(l, now)).length} active`}</Text> : null}
           {!m.isRunning && r ? (

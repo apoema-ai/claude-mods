@@ -263,16 +263,16 @@ test('/cache-timer off writes the shared switch and stops the band and keep warm
   expect(await bandShown()).toBe(true)
 })
 
-test('/cachetimer hide takes the band away and /cachetimer show brings it back', async ($, on) => {
+test('/cache-timer hide takes the band away and /cache-timer show brings it back', async ($, on) => {
   const { clock } = engine(on, 'unknown')
   await replied($, clock)
 
-  await $.command.run({ command: 'cachetimer', args: 'hide' } as never)
+  await $.command.run({ command: 'cache-timer', args: 'hide' } as never)
   const hidden = await $.ui.mount(BAND('terminal'))
   expect(await hidden.find({ type: 'Text', text: /Cache warm/ })).toBeUndefined()
   await hidden.unmount()
 
-  await $.command.run({ command: 'cachetimer', args: 'show' } as never)
+  await $.command.run({ command: 'cache-timer', args: 'show' } as never)
   const shown = await $.ui.mount(BAND('terminal'))
   expect(await shown.find({ type: 'Text', text: /Cache warm/ })).toBeDefined()
   await shown.unmount()
@@ -283,7 +283,7 @@ test('hiding the band while keep warm runs leaves a chip, and its Stop button st
   await replied($, clock)
   await $.command.run({ command: 'keepwarm', args: '' } as never)
 
-  const hidden = await $.command.run({ command: 'cachetimer', args: 'hide' } as never)
+  const hidden = await $.command.run({ command: 'cache-timer', args: 'hide' } as never)
   expect(hidden.text).toMatch(/Keep warm is still on/)
   for (const surface of ['terminal', 'desktop'] as const) {
     const ui = await $.ui.mount(BAND(surface))
@@ -614,7 +614,7 @@ test('the Hide button says how to bring the band back', async ($, on) => {
   const ui = await $.ui.mount(BAND('terminal'))
   await ui.press({ key: 'hide' })
   await ui.unmount()
-  expect(seen.toasts).toContain('Cache Timer hidden. Type /cachetimer to show it again.')
+  expect(seen.toasts).toContain('Cache Timer hidden. Type /cache-timer show to show it again.')
 })
 
 test('a background turn does not stop keep warm', async ($, on) => {

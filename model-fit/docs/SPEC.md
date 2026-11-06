@@ -56,8 +56,8 @@ A Claude Code mod that checks whether the main chat's **Setting** (its model and
 
 - **Band above the prompt**, shown only on a Mismatch, styled like plan-bar: `Opus 5.5 · high → Sonnet 5.5 · medium   Reason: mechanical edits, no design work   [Switch] [Trigger: Each prompt ▾] [Auto ○] ✕`. ✕ hides it until the next Recommendation.
 - **While Auto is on**, the band stays up all the time, so the Trigger and Auto stay in reach. With nothing to change it shows `Now: <Setting>`; after Auto acts it shows that switch and the reason. Switch and Switch and go are drawn as dim text that cannot be pressed (the mods `Button` has no disabled state), there is no ✕, and there is no cache warning, since Auto has already decided. While Auto is paused, a card's buttons work as with Auto off, and pressing `Auto: paused` resumes Auto. Otherwise the Auto button turns Auto on or off. Turning Auto on clears an open card, since Auto judges the next prompt itself. Turning Auto off cancels a switch Auto has queued for the turn's end, and a recommendation that differs from the Setting stays up as a card with live buttons; one Auto already applied clears.
-- **`/modelfit`** shows the Setting, the Trigger, Auto (and whether it is paused) and the last Recommendation with its reason. `/modelfit off|prompt|skill` sets the Trigger; `/modelfit auto on|off` sets Auto and clears a Pause.
-- **Settings** in `~/.claude/mods/model-fit.json` (the plugin's `userConfig` supplies the defaults when it is installed), changed from the band and `/modelfit`. Built first on `$.config.set`, which found no row for the plugin when loaded from a folder:
+- **`/model-fit`** (or `/model-fit status`) shows whether the mod is on, the Setting, the Trigger, Auto (and whether it is paused) and the last Recommendation with its reason. `/model-fit on|off` switches the mod in every chat through `~/.claude/mods/switches.json`; `/model-fit trigger off|prompt|skill` sets the Trigger; `/model-fit auto on|off` sets Auto and clears a Pause.
+- **Settings** in `~/.claude/mods/model-fit.json` (the plugin's `userConfig` supplies the defaults when it is installed), changed from the band and `/model-fit`. Built first on `$.config.set`, which found no row for the plugin when loaded from a folder:
 
 | Key | Type | Default |
 |---|---|---|
@@ -69,7 +69,7 @@ A Claude Code mod that checks whether the main chat's **Setting** (its model and
 | `rubricFile` | string | empty (built-in Rubric) |
 
 - No status line entry.
-- In the desktop app, `/config` opens a terminal dialog that the Code tab does not show, so there the band and `/modelfit` are the only controls. Both must cover every setting a person changes often (Trigger, Auto).
+- In the desktop app, `/config` opens a terminal dialog that the Code tab does not show, so there the band and `/model-fit` are the only controls. Both must cover every setting a person changes often (Trigger, Auto).
 
 ## Verification and release
 

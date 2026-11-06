@@ -110,7 +110,7 @@ test('/model-fit off writes the shared switch and stops every look, on removes i
   const switches = '/Users/test/.claude/mods/switches.json'
   files[switches] = '{ "other": false }'
   await start($ as never)
-  expect(((await $.command.run({ command: 'model-fit', args: 'status' } as never)) as { text: string }).text).toBe('Model Fit is on. Type /model-fit off to turn it off.')
+  expect(((await $.command.run({ command: 'model-fit', args: 'status' } as never)) as { text: string }).text).toContain('Model Fit is on. Type /model-fit off to turn it off.')
 
   const off = (await $.command.run({ command: 'model-fit', args: 'off' } as never)) as { text: string }
   expect(off.text).toMatch(/off in every chat/)
@@ -119,7 +119,7 @@ test('/model-fit off writes the shared switch and stops every look, on removes i
   await clock.settle()
   expect(judged, 'off: no Judge call').toHaveLength(0)
   expect(await band($ as never), 'off: no offer').not.toContain('opus')
-  expect(((await $.command.run({ command: 'modelfit', args: '' } as never)) as { text: string }).text).toContain('Model Fit is off in every chat')
+  expect(((await $.command.run({ command: 'model-fit', args: '' } as never)) as { text: string }).text).toContain('Model Fit is off in every chat')
 
   const back = (await $.command.run({ command: 'model-fit', args: 'on' } as never)) as { text: string }
   expect(back.text).toBe('Model Fit is on.')
@@ -266,18 +266,22 @@ test('the Skill tool starts a look in the middle of a turn', { timeoutMs: 30000 
   expect(await band($ as never)).toContain('→ sonnet')
 })
 
-test('/modelfit sets the trigger and Auto, and shows the status', { timeoutMs: 30000 }, async ($, on) => {
+test('/model-fit sets the trigger and Auto, and shows the status', { timeoutMs: 30000 }, async ($, on) => {
   const { cfg } = rig(on)
   await start($ as never)
   const run = $.command.run as unknown as (input: { command: string; args?: string }) => Promise<{ text: string }>
-  expect((await run({ command: 'modelfit', args: 'skill' })).text).toContain('skill')
+  expect((await run({ command: 'model-fit', args: 'trigger skill' })).text).toContain('skill')
   expect(cfg.trigger).toBe('skill')
-  await run({ command: 'modelfit', args: 'auto on' })
+  await run({ command: 'model-fit', args: 'auto on' })
   expect(cfg.auto).toBe(true)
-  const status = (await run({ command: 'modelfit' })).text
+  const status = (await run({ command: 'model-fit' })).text
   expect(status).toContain('Trigger: skill')
   expect(status).toContain('Auto: on')
-  expect((await run({ command: 'modelfit', args: 'nonsense' })).text).toContain('Usage')
+  expect((await run({ command: 'model-fit', args: 'status' })).text, 'status is the same').toBe(status)
+  expect((await run({ command: 'model-fit', args: 'nonsense' })).text).toContain('Usage')
+  expect((await run({ command: 'model-fit', args: 'skill' })).text, 'a bare trigger word is not a trigger').toContain('Usage')
+  expect((await run({ command: 'model-fit', args: 'trigger off' })).text).toContain('trigger off')
+  expect(cfg.trigger, 'trigger off is the setting, not the switch').toBe('off')
 })
 
 test('when /model answers but the model does not change, the requests carry it and the log says why', { timeoutMs: 30000 }, async ($, on) => {
@@ -413,7 +417,7 @@ test("a switch that lands after the read-back gave up is not taken for the perso
   expect(toasts.some(t => t.includes('now opus')), 'the landing is confirmed').toBe(true)
   expect(logText(files), 'and logged').toContain('/model opus landed late')
   const run = $.command.run as unknown as (input: { command: string; args?: string }) => Promise<{ text: string }>
-  expect((await run({ command: 'modelfit' })).text).not.toContain('paused')
+  expect((await run({ command: 'model-fit' })).text).not.toContain('paused')
 })
 
 test('pressing Auto: paused resumes Auto instead of turning it off', { timeoutMs: 30000 }, async ($, on) => {
@@ -429,5 +433,5 @@ test('pressing Auto: paused resumes Auto instead of turning it off', { timeoutMs
   await clock.settle()
   expect(cfg.auto, 'Auto stays on').toBe(true)
   const run = $.command.run as unknown as (input: { command: string; args?: string }) => Promise<{ text: string }>
-  expect((await run({ command: 'modelfit' })).text, 'and is no longer paused').not.toContain('paused')
+  expect((await run({ command: 'model-fit' })).text, 'and is no longer paused').not.toContain('paused')
 })

@@ -377,7 +377,7 @@ async function rewarm($: EngineInterface) {
 
 async function hide($: EngineInterface) {
   await update($, isHidden, () => true)
-  say($, (await read($, warm)) ? 'Cache Timer hidden. Keep warm is still on, so its one-line chip stays. Type /cachetimer to show the timer.' : 'Cache Timer hidden. Type /cachetimer to show it again.')
+  say($, (await read($, warm)) ? 'Cache Timer hidden. Keep warm is still on, so its one-line chip stays. Type /cache-timer show to show the timer.' : 'Cache Timer hidden. Type /cache-timer show to show it again.')
 }
 
 // Once a second: sends the ping when the cache is LEAD from going cold, and keeps the caps.
@@ -450,15 +450,9 @@ function warmLine(w: Warm, left: number, now: number): string {
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     await $.command.register({
-      name: 'cachetimer',
-      description: 'Cache Timer: show or hide it. "/cachetimer hide" hides it, "/cachetimer show" brings it back',
-      argumentHint: '[hide|show]',
-      immediate: true,
-    })
-    await $.command.register({
       name: 'cache-timer',
-      description: 'Cache Timer: turn the mod on or off in every chat. "/cache-timer off" switches it off, "/cache-timer on" brings it back',
-      argumentHint: '[on|off|status]',
+      description: 'Cache Timer: "/cache-timer off" or "on" switches the mod in every chat; "hide" or "show" hides or shows the band in this chat',
+      argumentHint: '[on|off|status|hide|show]',
       immediate: true,
     })
     await $.command.register({
@@ -515,7 +509,7 @@ export const register: Register = on => {
   // The person is back: a prompt of theirs ends keep warm. Its own commands do not.
   on('prompt.submit', async ($, e, next) => {
     const text = e.text.trim().toLowerCase()
-    const own = text.startsWith('/keepwarm') || text.startsWith('/cachetimer') || text === PING_PROMPT.toLowerCase()
+    const own = text.startsWith('/keepwarm') || text.startsWith('/cache-timer') || text === PING_PROMPT.toLowerCase()
     if (!own && !BACKGROUND.has(e.origin?.kind ?? '')) {
       void stopWarm($, 'Keep warm stopped: you sent a message.').catch(() => undefined)
     }
@@ -545,19 +539,18 @@ export const register: Register = on => {
 
   on('command.run', { command: 'cache-timer' }, async ($, e) => {
     const arg = e.args.trim().toLowerCase()
+    // hide and show are this chat's band only; on and off switch the mod in every chat.
+    if (arg === 'hide' || arg === 'show') {
+      const hideIt = arg === 'hide'
+      await update($, isHidden, () => hideIt)
+      if (!hideIt) return { text: 'Cache Timer is shown. Type /cache-timer hide to hide it.' }
+      if (await read($, warm)) return { text: 'Cache Timer hidden. Keep warm is still on, so its one-line chip stays until it stops. Type /cache-timer show to show the timer.' }
+      return { text: 'Cache Timer hidden. Type /cache-timer show to show it.' }
+    }
     if (arg !== 'on' && arg !== 'off') return { text: `Cache Timer is ${switchOff ? 'off' : 'on'}. Type /cache-timer ${switchOff ? 'on' : 'off'} to turn it ${switchOff ? 'on' : 'off'}.` }
     if (!(await writeSwitch($, arg === 'on'))) return { text: 'Cache Timer: could not write ~/.claude/mods/switches.json, so nothing changed.' }
     await pollSwitches($)
     return { text: arg === 'on' ? 'Cache Timer is on.' : 'Cache Timer is off in every chat. Type /cache-timer on to turn it on again.' }
-  })
-
-  on('command.run', { command: 'cachetimer' }, async ($, e) => {
-    const arg = e.args.trim().toLowerCase()
-    const hideIt = arg === 'hide' || (arg !== 'show' && !(await read($, isHidden)))
-    await update($, isHidden, () => hideIt)
-    if (!hideIt) return { text: 'Cache Timer is on. Type /cachetimer hide to hide it.' }
-    if (await read($, warm)) return { text: 'Cache Timer hidden. Keep warm is still on, so its one-line chip stays until it stops. Type /cachetimer to show the timer.' }
-    return { text: 'Cache Timer hidden. Type /cachetimer to show it.' }
   })
 
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {

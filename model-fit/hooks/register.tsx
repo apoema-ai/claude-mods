@@ -186,7 +186,7 @@ async function checkDrift($: EngineInterface, now: Setting) {
   const cfg = await readCfg($)
   if (cfg.auto && !paused) {
     paused = true
-    say($, 'Model Fit: Auto paused, you changed the model or effort. /modelfit auto on resumes it.')
+    say($, 'Model Fit: Auto paused, you changed the model or effort. /model-fit auto on resumes it.')
   }
   await drawOffer($, null, null, cfg)
 }
@@ -347,13 +347,8 @@ export const register: Register = (on, options) => {
     home = (await $.env.get('HOME').catch(() => undefined)) || ($.plugin.root.split('/.claude/')[0] ?? '')
     await $.command.register({
       name: 'model-fit',
-      description: 'Model Fit: turn the mod on or off in every chat. "/model-fit off" switches it off, "/model-fit on" brings it back',
-      argumentHint: '[on|off|status]',
-    })
-    await $.command.register({
-      name: 'modelfit',
-      description: 'Model Fit: show the model and effort check, or set the trigger (off|prompt|skill) and auto (on|off)',
-      argumentHint: '[off|prompt|skill|auto on|auto off]',
+      description: 'Model Fit: show the check, turn the mod on or off in every chat, or set the trigger (off|prompt|skill) and Auto (on|off)',
+      argumentHint: '[status|on|off|trigger off|trigger prompt|trigger skill|auto on|auto off]',
     })
     const cfg = await readCfg($)
     await syncState($, cfg)
@@ -419,7 +414,7 @@ export const register: Register = (on, options) => {
       const name = e.command.name
       const info = (await $.command.list().catch(() => [])).find(c => c.name === name)
       // Built-in commands (/model, /clear) and this mod's own are not skills.
-      if (name === 'modelfit' || !info || info.source === 'builtin') return next(e)
+      if (name === 'model-fit' || !info || info.source === 'builtin') return next(e)
       skill = name
       subject = `/${name} ${e.command.args}`
       lastPrompt = e.text
@@ -443,35 +438,30 @@ export const register: Register = (on, options) => {
     return next(e)
   }).catch(async ($, e, next) => next(e)) // only advises: if it fails, the tool call still goes ahead
 
+  // One command: on and off switch the mod in every chat; trigger and auto change its settings.
   on('command.run', { command: 'model-fit' }, async ($, e) => {
-    const arg = (e.args ?? '').trim().toLowerCase()
-    if (arg !== 'on' && arg !== 'off') {
-      const { switched } = await readCfg($)
-      return { text: `Model Fit is ${switched ? 'off' : 'on'}. Type /model-fit ${switched ? 'on' : 'off'} to turn it ${switched ? 'on' : 'off'}.` }
+    const [verb = '', arg = ''] = (e.args ?? '').trim().toLowerCase().split(/\s+/).filter(Boolean)
+    if (!verb || verb === 'status') return { text: await statusText($) }
+    if (verb === 'on' || verb === 'off') {
+      if (!(await writeSwitch($, verb === 'on'))) return { text: 'Model Fit: could not write ~/.claude/mods/switches.json; see ~/.claude/mods-logs/model-fit.log.' }
+      const cfg = await readCfg($)
+      if (cfg.switched) {
+        hold = undefined
+        queued = undefined
+        pressed = undefined
+      }
+      await drawOffer($, null, null, cfg)
+      return { text: verb === 'on' ? 'Model Fit is on.' : 'Model Fit is off in every chat. Type /model-fit on to turn it on again.' }
     }
-    if (!(await writeSwitch($, arg === 'on'))) return { text: 'Model Fit: could not write ~/.claude/mods/switches.json; see ~/.claude/mods-logs/model-fit.log.' }
-    const cfg = await readCfg($)
-    if (cfg.switched) {
-      hold = undefined
-      queued = undefined
-      pressed = undefined
-    }
-    await drawOffer($, null, null, cfg)
-    return { text: arg === 'on' ? 'Model Fit is on.' : 'Model Fit is off in every chat. Type /model-fit on to turn it on again.' }
-  })
-
-  on('command.run', { command: 'modelfit' }, async ($, e) => {
-    const [verb = '', arg = ''] = (e.args ?? '').trim().toLowerCase().split(/\s+/)
-    if (!verb) return { text: await statusText($) }
     if (verb === 'auto') {
-      if (arg !== 'on' && arg !== 'off') return { text: 'Usage: /modelfit auto on|off' }
+      if (arg !== 'on' && arg !== 'off') return { text: 'Usage: /model-fit auto on|off' }
       if (!(await setCfg($, 'auto', arg === 'on'))) return { text: 'Model Fit: could not change Auto; see ~/.claude/mods-logs/model-fit.log.' }
       if (arg === 'on') paused = false
       await modeChanged($)
       return { text: `Model Fit: Auto ${arg}.` }
     }
-    const trigger = TRIGGER_WORDS[verb]
-    if (!trigger) return { text: 'Usage: /modelfit [off|prompt|skill|auto on|auto off]' }
+    const trigger = verb === 'trigger' ? TRIGGER_WORDS[arg] : undefined
+    if (!trigger) return { text: 'Usage: /model-fit [status|on|off|trigger off|prompt|skill|auto on|off]' }
     if (!(await setCfg($, 'trigger', trigger))) return { text: 'Model Fit: could not change the trigger; see ~/.claude/mods-logs/model-fit.log.' }
     await syncState($, await readCfg($))
     return { text: `Model Fit: trigger ${trigger}.` }
@@ -592,7 +582,7 @@ export const register: Register = (on, options) => {
           </Box>
           {isPaused ? (
             <Text key="fit-paused" color={AMBER} wrap="wrap">
-              Auto is paused because you changed the model or effort. Press Auto: paused, or run /modelfit auto on, to resume it.
+              Auto is paused because you changed the model or effort. Press Auto: paused, or run /model-fit auto on, to resume it.
             </Text>
           ) : null}
         </Box>
@@ -605,7 +595,7 @@ async function statusText($: EngineInterface): Promise<string> {
   const cfg = await readCfg($)
   const cur = await setting($)
   return [
-    ...(cfg.switched ? ['Model Fit is off in every chat. Type /model-fit on to turn it on again.'] : []),
+    cfg.switched ? 'Model Fit is off in every chat. Type /model-fit on to turn it on again.' : 'Model Fit is on. Type /model-fit off to turn it off.',
     `Setting: ${label(cur.model, cur.effort)}`,
     `Trigger: ${cfg.trigger}`,
     `Auto: ${cfg.auto ? (paused ? 'on, paused (you changed the model or effort)' : 'on') : 'off'}`,

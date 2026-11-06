@@ -463,7 +463,7 @@ test('the panels row hides and shows panels, and a reset keeps the choice', asyn
   expect(await ui.find({ text: /▸ panels · 1 hidden/ })).toBeDefined()
   await ui.unmount()
   // A reset clears the session, not the choice of panels.
-  await $.command.run({ command: 'chatdeck', args: 'reset' } as never)
+  await $.command.run({ command: 'chat-deck', args: 'reset' } as never)
   const again = await $.ui.mount({ ...pane(64), surface: 'terminal' })
   expect(await again.find({ text: /▸ panels · 1 hidden/ })).toBeDefined()
   await again.press({ key: 'panels-toggle' })
@@ -885,7 +885,7 @@ test('a resumed session reads its compaction window at start, and /clear leaves 
   on('session.start', (_$, e) => ({ cwd: e.cwd }))
   on('session.end', (_$, e) => ({ sessionId: e.sessionId }))
   on('session.measure', (_$, e) => ({ changed: e.changed }))
-  on('command.register', () => ({ value: { command: 'chatdeck' } }))
+  on('command.register', () => ({ value: { command: 'chat-deck' } }))
   on('ui.open', () => ({ value: { isPlaced: true as const } }))
   // Resumed with 200k already in context.
   const asked = compactHost(on, { window: () => 1_000_000, compact: 400_000, tokens: 200_000 })

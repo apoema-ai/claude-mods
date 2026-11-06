@@ -8,9 +8,9 @@ Everything runs locally, every number comes from a real session event, and every
 
 | Mod | In one line | Version |
 |---|---|---|
-| [chat-deck](chat-deck) | A live pane beside the transcript: vitals, plan, git, permission checks, subagent cards | 0.10.0 |
-| [cache-timer](cache-timer) | Counts down until the prompt cache goes cold, and can keep it warm | 0.5.0 |
-| [model-fit](model-fit) | Checks whether the model and effort fit the task, with a Switch button | 0.3.0 |
+| [chat-deck](chat-deck) | A live pane beside the transcript: vitals, plan, git, permission checks, subagent cards | 0.11.0 |
+| [cache-timer](cache-timer) | Counts down until the prompt cache goes cold, and can keep it warm | 0.6.0 |
+| [model-fit](model-fit) | Checks whether the model and effort fit the task, with a Switch button | 0.4.0 |
 | [chat-handoff](chat-handoff) | Writes a handoff of the whole chat so work continues in a fresh one | 0.4.0 |
 
 Requires Claude Code 2.1.287 or later (mods are an early-access API, so details can move between releases).
@@ -75,6 +75,8 @@ Every mod can be switched off in every chat, and back on, without uninstalling a
 | `/cache-timer on`, `off`, `status` | Off hides the band and stops keep warm |
 | `/model-fit on`, `off`, `status` | Off means no band and no Judge call |
 | `/chat-handoff on`, `off`, `status` | Off stops the Refresh offer |
+
+The command named after each mod also carries its other controls: `/chat-deck` opens the pane (with `close`, `reset` and `layout ...`), `/cache-timer hide` and `show` hide the band in this chat, and `/model-fit trigger ...` and `auto ...` change its settings.
 
 The state lives in one shared file, `~/.claude/mods/switches.json` (`"<mod>": false` means off), and each mod re-reads it every few seconds, so a chat that is already open follows along.
 

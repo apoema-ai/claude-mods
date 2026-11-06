@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.11.0
+
+- **One command, `/chat-deck`.** It replaces `/chatdeck`, which is gone: `/chat-deck` opens the pane, and `close`, `reset` and `layout auto|compact|wide|mini` work as before, beside `on`, `off` and `status`.
+
+## 0.10.0
+
+- **An off switch in every chat.** `/chat-deck off` writes `"chat-deck": false` to `~/.claude/mods/switches.json` and `/chat-deck on` removes it; `/chat-deck status` says which. The file is read every 3 s. Off closes the pane and keeps it closed, clears the status line, stops the git reads, makes the plan tool answer that Chat Deck is off, and records nothing from the hooks.
+- **Hooks that fail pass the event through**, so a fault in the dashboard never blocks a prompt, a permission check, a tool call or a subagent.
+
 ## 0.9.0
 
 - **Config cut from 13 options to 5** (`architectPattern`, `paneColumns`, `layout`, `palette`, `openOnStart`). Removed: `panels`, `maxCards`, `motion`, `moments`, `matchDescriptions`, `statusLine`, `architectLabel`, `gateLabel`. They are fixed at their old defaults and a saved value is ignored.

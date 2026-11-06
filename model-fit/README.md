@@ -1,6 +1,6 @@
 # model-fit
 
-**Version:** 0.1.0
+**Version:** 0.4.0
 
 A Claude Code mod (function hooks, Claude Code 2.1.287+) that checks whether the chat's model and effort fit the task in front of it. When they do not, a band above the prompt offers a Switch button. An Auto toggle lets the mod switch by itself.
 
@@ -25,24 +25,24 @@ Nothing goes anywhere else. With the trigger set to `off` it makes no calls and 
 
 ## Auto
 
-With Auto on, the prompt waits up to 3 seconds for the Judge, the current turn's requests go out on the recommendation, and `/model` follows once the turn ends. A toast shows the before and after. If you change the model or effort yourself, Auto pauses for the rest of the session until you run `/modelfit auto on`.
+With Auto on, the prompt waits up to 3 seconds for the Judge, the current turn's requests go out on the recommendation, and `/model` follows once the turn ends. A toast shows the before and after. If you change the model or effort yourself, Auto pauses for the rest of the session until you run `/model-fit auto on`.
 
 ## Use it
 
 ```
 /plugin install model-fit@apoema-claude-mods
 /reload-plugins
-/modelfit
+/model-fit
 ```
 
 | Command | Does |
 |---|---|
-| `/modelfit` | Shows the setting, trigger, Auto and the last recommendation |
-| `/modelfit off`, `prompt`, `skill` | Sets the trigger |
-| `/modelfit auto on`, `auto off` | Sets Auto (on also ends a pause) |
-| `/model-fit on`, `off`, `status` | Turns the whole mod on or off in every chat. Off writes `"model-fit": false` to `~/.claude/mods/switches.json`; the mod reads it on each prompt, shows no band and makes no Judge call, whatever the trigger says. The trigger and Auto settings are kept. |
+| `/model-fit`, `/model-fit status` | Shows whether the mod is on, the setting, trigger, Auto and the last recommendation |
+| `/model-fit on`, `off` | Turns the whole mod on or off in every chat. Off writes `"model-fit": false` to `~/.claude/mods/switches.json`; the mod reads it on each prompt, shows no band and makes no Judge call, whatever the trigger says. The trigger and Auto settings are kept. |
+| `/model-fit trigger off`, `trigger prompt`, `trigger skill` | Sets the trigger. `trigger off` stops the looks but keeps the mod on; `/model-fit off` switches the mod off |
+| `/model-fit auto on`, `auto off` | Sets Auto (on also ends a pause) |
 
-The band holds the same controls: Switch, Trigger, Auto and a dismiss button. Settings are kept in `~/.claude/mods/model-fit.json` (`trigger`, `auto`, `guardTokens`, `models`, `efforts`, `rubricFile`); `/modelfit` and the band write it, and you can edit it by hand. The host lists no `/config` rows for a plugin loaded from a folder, so the file is the one place they live.
+The band holds the same controls: Switch, Trigger, Auto and a dismiss button. Settings are kept in `~/.claude/mods/model-fit.json` (`trigger`, `auto`, `guardTokens`, `models`, `efforts`, `rubricFile`); `/model-fit` and the band write it, and you can edit it by hand. The host lists no `/config` rows for a plugin loaded from a folder, so the file is the one place they live.
 
 ## Known limits
 

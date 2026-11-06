@@ -135,7 +135,7 @@ test('/chat-deck off writes the shared switch, clears the status and stops the p
   expect(JSON.parse(files[switches]!), 'switch written, other keys kept').toEqual({ other: false, 'chat-deck': false })
   expect(statuses[statuses.length - 1], 'status line cleared').toBeUndefined()
   expect(String((await callTool({ tool: TOOL, tool_use_id: 'p2', title: 'Make the deck', steps: steps4(2, true) })).result), 'plan tool stands down').toMatch(/Chat Deck is off/)
-  expect(((await $.command.run({ command: 'chatdeck', args: '' } as never)) as { text: string }).text, 'the pane will not open').toMatch(/is off/)
+  expect(((await $.command.run({ command: 'chat-deck', args: '' } as never)) as { text: string }).text, 'the pane will not open').toMatch(/is off/)
 
   expect((await run('on')).text).toBe('Chat Deck is on.')
   expect(JSON.parse(files[switches]!), 'switch removed').toEqual({ other: false })
