@@ -31,6 +31,7 @@ const OFFER = { plugin: 'model-fit', key: 'offer' } as const
 const TRIG = { plugin: 'model-fit', key: 'trigger' } as const
 const AUTO = { plugin: 'model-fit', key: 'auto' } as const
 const PAUSED = { plugin: 'model-fit', key: 'paused' } as const
+const COLLAPSED = { plugin: 'model-fit', key: 'collapsed' } as const
 
 // How long an Auto prompt waits for the Judge before the turn starts without a Recommendation.
 const WAIT_MS = 3000
@@ -39,7 +40,8 @@ const GREEN = '#10b981'
 const AMBER = '#eab308'
 
 // `switched`: the shared switch is off, so the mod does nothing whatever the trigger says.
-type Cfg = { trigger: Trigger; auto: boolean; guardTokens: number; models: Alias[]; efforts: Effort[]; rubricFile: string; switched: boolean }
+// `collapsed`: the band draws as one line; kept in the settings file so it stays that way in the next chat.
+type Cfg = { trigger: Trigger; auto: boolean; guardTokens: number; models: Alias[]; efforts: Effort[]; rubricFile: string; switched: boolean; collapsed: boolean }
 
 let home = ''
 // The Setting the engine last reported, or the one the mod set itself. A different report is the person's change.
@@ -143,6 +145,7 @@ async function readCfg($: EngineInterface): Promise<Cfg> {
     trigger: switched ? 'off' : parseTrigger(v('trigger')),
     auto: !switched && v('auto') === true,
     switched,
+    collapsed: v('collapsed') === true,
     guardTokens: Number.isFinite(guardTokens) ? guardTokens : DEFAULTS.guardTokens,
     models: models.length ? models : [...MODELS],
     efforts: efforts.length ? efforts : [...EFFORTS],
@@ -160,6 +163,7 @@ async function syncState($: EngineInterface, cfg: Cfg) {
   await $.state.set(TRIG, cfg.trigger)
   await $.state.set(AUTO, cfg.auto)
   await $.state.set(PAUSED, paused)
+  await $.state.set(COLLAPSED, cfg.collapsed)
 }
 
 async function drawOffer($: EngineInterface, from: Setting | null, to: Rec | null, cfg?: Cfg, queuedBy?: 'switch' | 'go') {
@@ -490,6 +494,12 @@ export const register: Register = (on, options) => {
     await syncState($, await readCfg($))
     return { element: e.element }
   })
+  on('ui.press', { plugin: NAME, element: 'fit-collapse' }, async ($, e) => {
+    const cfg = await readCfg($)
+    await setCfg($, 'collapsed', !cfg.collapsed)
+    await syncState($, await readCfg($))
+    return { element: e.element }
+  })
   on('ui.press', { plugin: NAME, element: 'fit-auto' }, async ($, e) => {
     const cfg = await readCfg($)
     // "Auto: paused" resumes Auto; otherwise the press turns it on or off.
@@ -519,6 +529,59 @@ export const register: Register = (on, options) => {
     const accent = up ? AMBER : GREEN
     // The cache warning helps decide a press; Auto has already decided.
     const warn = o && !autoActs ? cacheNote(o.from, o.to, o.tokens) : null
+    const { value: collapsed = false } = await $.state.get(COLLAPSED)
+    if (collapsed) {
+      // One line: the title, the move (or the setting), and the one button that acts. Reason, warning, Trigger and Auto wait behind the toggle.
+      const tag = auto ? (isPaused ? 'Auto: paused' : 'Auto: on') : null
+      return (
+        <Box flexDirection="column" rowGap="sm">
+          {rest as never}
+          <Box key="fit-band" flexDirection="row" justifyContent="space-between" borderStyle="round" borderColor={isPaused ? AMBER : accent} paddingX={1}>
+            <Box key="fit-line" flexDirection="row" gap={1}>
+              <Text color={accent} bold>
+                ◆ Model Fit
+              </Text>
+              {o ? (
+                <Box key="fit-move" flexDirection="row" gap={1}>
+                  <Text color={accent}>{up ? '▲' : '▼'}</Text>
+                  <Text dimColor strikethrough>
+                    {label(o.from.model, o.from.effort)}
+                  </Text>
+                  <Text dimColor>→</Text>
+                  <Text bold color={accent}>
+                    {label(o.to.model, o.to.keepEffort ? '' : o.to.effort)}
+                  </Text>
+                </Box>
+              ) : (
+                <Text key="fit-now" dimColor>
+                  {label(now?.model ?? '', now?.effort ?? '')}
+                </Text>
+              )}
+              {warn ? (
+                <Text key="fit-cache" color={AMBER}>
+                  ⚠
+                </Text>
+              ) : null}
+            </Box>
+            <Box key="fit-actions" flexDirection="row" gap={2}>
+              {o?.queued ? (
+                <Text key="fit-queued" dimColor>
+                  Queued
+                </Text>
+              ) : o && !autoActs ? (
+                <Button key="fit-switch" label="Switch" onPress={() => undefined} />
+              ) : null}
+              {tag ? (
+                <Text key="fit-tag" color={isPaused ? AMBER : undefined} dimColor={!isPaused}>
+                  {tag}
+                </Text>
+              ) : null}
+              <Button key="fit-collapse" label="▸" plain dimColor onPress={() => undefined} />
+            </Box>
+          </Box>
+        </Box>
+      )
+    }
     return (
       <Box flexDirection="column" rowGap="sm">
         {rest as never}
@@ -530,7 +593,10 @@ export const register: Register = (on, options) => {
               </Text>
               {o ? <Text color={accent}>{up ? '▲ stronger' : '▼ cheaper'}</Text> : null}
             </Box>
-            {auto ? null : <Button key="fit-dismiss" label="✕" plain dimColor onPress={() => undefined} />}
+            <Box key="fit-head-buttons" flexDirection="row" gap={1}>
+              <Button key="fit-collapse" label="▾" plain dimColor onPress={() => undefined} />
+              {auto ? null : <Button key="fit-dismiss" label="✕" plain dimColor onPress={() => undefined} />}
+            </Box>
           </Box>
           {o ? (
             <Box key="fit-move" flexDirection="row" gap={1}>

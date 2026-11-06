@@ -373,7 +373,42 @@ test('with Auto on the band stays up, shows what Auto did, and its Switch button
   expect(await v.find({ type: 'Button', key: 'fit-dismiss' }), 'no ✕ while Auto is on').toBeUndefined()
 })
 
-test('a switch that lands a moment after /model answers is not logged as a failure', { timeoutMs: 30000 }, async ($, on) => {
+test('the band collapses to one line that keeps the move and Switch, and the toggle expands it again', { timeoutMs: 30000 }, async ($, on) => {
+  const { clock, cfg, ran } = rig(on, { model: sonnet, replies: [say('opus', 'high', 'design across several files')] })
+  await start($ as never)
+  await $.prompt.submit({ text: 'design the new module' } as never)
+  await clock.settle()
+  const v = await mountBand($ as never)
+  expect(await v.find({ type: 'Button', key: 'fit-collapse' }), 'the toggle is in the header').toBeDefined()
+  await v.press({ key: 'fit-collapse' })
+  expect(cfg.collapsed, 'the choice is kept in the settings file').toBe(true)
+  const says = await band($ as never)
+  expect(says, 'the title stays').toContain('Model Fit')
+  expect(says, 'the move stays').toContain('opus · high')
+  expect(says, 'the reason is folded away').not.toContain('design across several files')
+  const c = await mountBand($ as never)
+  expect(await c.find({ type: 'Button', key: 'fit-trigger' }), 'Trigger is folded away').toBeUndefined()
+  expect(await c.find({ type: 'Button', key: 'fit-go' }), 'so is Switch and go').toBeUndefined()
+  await c.press({ key: 'fit-collapse' })
+  expect(cfg.collapsed, 'the toggle expands it').toBe(false)
+  expect(await band($ as never), 'the reason is back').toContain('design across several files')
+  const again = await mountBand($ as never)
+  await again.press({ key: 'fit-collapse' })
+  const folded = await mountBand($ as never)
+  await folded.press({ key: 'fit-switch' })
+  expect(ran[0], 'Switch still works while collapsed').toEqual({ command: 'model', args: 'opus' })
+})
+
+test('a collapsed band with nothing on offer shows the Setting and the Auto state on one line', { timeoutMs: 30000 }, async ($, on) => {
+  rig(on, { model: sonnet, cfg: { auto: true, collapsed: true } })
+  await start($ as never)
+  const says = await band($ as never)
+  expect(says, 'the Setting').toContain('sonnet')
+  expect(says, 'the Auto state').toContain('Auto: on')
+  expect(says, 'no expanded line').not.toContain('Now:')
+})
+
+test('a switch that lands a moment after /model answers is not logged as a failure',{ timeoutMs: 30000 }, async ($, on) => {
   const { clock, toasts, files, ran } = rig(on, { model: sonnet, lag: 2, replies: [say('opus', 'high')] })
   await start($ as never)
   await $.prompt.submit({ text: 'design the new module' } as never)

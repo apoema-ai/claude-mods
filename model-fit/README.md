@@ -1,6 +1,6 @@
 # model-fit
 
-**Version:** 0.4.0
+**Version:** 0.5.0
 
 A Claude Code mod (function hooks, Claude Code 2.1.287+) that checks whether the chat's model and effort fit the task in front of it. When they do not, a band above the prompt offers a Switch button. An Auto toggle lets the mod switch by itself.
 
@@ -42,7 +42,7 @@ With Auto on, the prompt waits up to 3 seconds for the Judge, the current turn's
 | `/model-fit trigger off`, `trigger prompt`, `trigger skill` | Sets the trigger. `trigger off` stops the looks but keeps the mod on; `/model-fit off` switches the mod off |
 | `/model-fit auto on`, `auto off` | Sets Auto (on also ends a pause) |
 
-The band holds the same controls: Switch, Trigger, Auto and a dismiss button. Settings are kept in `~/.claude/mods/model-fit.json` (`trigger`, `auto`, `guardTokens`, `models`, `efforts`, `rubricFile`); `/model-fit` and the band write it, and you can edit it by hand. The host lists no `/config` rows for a plugin loaded from a folder, so the file is the one place they live.
+The band holds the same controls: Switch, Trigger, Auto and a dismiss button. The `▾` button in its header collapses it to one line: the move (or the current setting), the Switch button while an offer is up, the Auto state, and `▸` to expand it again. The reason, the cache warning, Switch and go, Trigger and Auto wait behind the toggle. The choice is kept in the settings file, so the band starts collapsed in the next chat too. Settings are kept in `~/.claude/mods/model-fit.json` (`trigger`, `auto`, `collapsed`, `guardTokens`, `models`, `efforts`, `rubricFile`); `/model-fit` and the band write it, and you can edit it by hand. The host lists no `/config` rows for a plugin loaded from a folder, so the file is the one place they live.
 
 ## Known limits
 
@@ -54,4 +54,5 @@ The band holds the same controls: Switch, Trigger, Auto and a dismiss button. Se
 
 ## Version History
 
+- **0.5.0**: the band collapses to one line with a `▾`/`▸` toggle; the choice is kept in `model-fit.json`.
 - **0.1.0**: first release.

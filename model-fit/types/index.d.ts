@@ -11,6 +11,8 @@ declare module 'claude-code' {
       trigger: string
       auto: boolean
       paused: boolean
+      /** The band draws as one line. */
+      collapsed: boolean
     }
   }
 }
