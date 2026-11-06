@@ -391,19 +391,20 @@ export const register: Register = (on, options) => {
 
     return (
       <Box flexDirection="column" rowGap="sm" paddingX={1}>
-        <Box key="top" flexDirection="row" alignItems="center" justifyContent="space-between" gap={2}>
-          <Box key="tabs" flexDirection="row" alignItems="center" gap={1}>
+        {/* Each row wraps when the pane is narrow, rather than pushing buttons past its edge. */}
+        <Box key="top" flexDirection="row" flexWrap="wrap" alignItems="center" justifyContent="space-between" gap={1}>
+          <Box key="tabs" flexDirection="row" flexWrap="wrap" alignItems="center" gap={1}>
             <Button key="radar-tab-mine" variant={tab === 'mine' ? 'primary' : 'secondary'} label={`My PRs · ${c?.mine ?? 0}`} hotkey="m" onPress={() => undefined} />
             <Button key="radar-tab-review" variant={tab === 'review' ? 'primary' : 'secondary'} label={c?.pending ? `To review · ${c.pending} new` : `To review · ${data?.reviewing.length ?? 0}`} hotkey="v" onPress={() => undefined} />
           </Box>
-          <Box key="right" flexDirection="row" alignItems="center" gap={2}>
+          <Box key="right" flexDirection="row" flexWrap="wrap" alignItems="center" gap={1}>
             <Text dimColor>{busy ? 'Refreshing…' : data ? `Updated ${ago(data.at, now)} ago`.replace('now ago', 'just now') : ''}</Text>
             {hidden ? <Button variant="secondary" key="radar-show" label="Show bar" hotkey="b" onPress={() => undefined} /> : null}
             <Button variant="secondary" key="radar-mode" label={mode === 'auto' ? `Auto · ${everyLabel()}` : 'Manual'} hotkey="a" onPress={() => undefined} />
             <Button variant="secondary" key="radar-refresh" label="Refresh" hotkey="r" dimColor={busy} onPress={() => undefined} />
           </Box>
         </Box>
-        <Box key="sort" flexDirection="row" alignItems="center" gap={1}>
+        <Box key="sort" flexDirection="row" flexWrap="wrap" alignItems="center" gap={1}>
           <Text dimColor>Sort by</Text>
           {(['repo', 'title', 'number'] as const).map(f => (
             <Button key={`radar-sort-${f}`} variant={sort.field === f ? 'primary' : 'secondary'} label={SORT_LABEL[f]} hotkey={SORT_KEY[f]} onPress={() => undefined} />

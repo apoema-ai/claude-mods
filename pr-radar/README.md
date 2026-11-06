@@ -1,6 +1,6 @@
 # pr-radar
 
-**Version:** 0.4.0
+**Version:** 0.4.1
 
 A Claude Code mod (function hooks, Claude Code 2.1.287+) that shows the state of your open GitHub PRs in a band above the prompt, with a details pane and a Refresh button.
 
@@ -50,6 +50,7 @@ Plugin options: `refreshMode` (`auto` or `manual`, default `auto`) is the mode e
 
 ## Version History
 
+- **0.4.1**: The pane's button rows wrap when the pane is narrow.
 - **0.4.0**: Compact bar on one line (`Auto`, `↻ 1m`, `Open`, `✕`; no hotkey badges on desktop; shorter counts). Auto and Manual refresh modes on the bar and the pane, `/pr-radar auto|manual`, and the `refreshMode` option.
 - **0.3.0**: Sort by repository, title or number, ascending or descending. A Hide button on the bar, and `/pr-radar hide|show`.
 - **0.2.0**: redesign. Indigo band on one line with only the counts that matter. Pane with My PRs and To review tabs, PRs grouped by what they need, colored reviewer states, ages, links, short names, and empty, loading and error states.
