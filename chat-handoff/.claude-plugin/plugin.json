@@ -1,0 +1,19 @@
+{
+  "name": "chat-handoff",
+  "version": "0.4.0",
+  "description": "When a chat reaches a token threshold (250k by default, set in the plugin's config), offers Refresh: writes a handoff of the whole chat, shows the steps with progress bars, then copies it or starts a new chat with it. Saves a draft first and logs every run to ~/.claude/handoffs/handoff.log",
+  "author": {
+    "name": "Investor Team"
+  },
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "offerAtTokens": {
+      "type": "number",
+      "title": "Offer handoff at (tokens)",
+      "description": "Context size at which the Refresh offer opens. Chats auto-compact near 300k to 324k, so a value above that never offers. Hide and Close wait for 40% of this value more tokens.",
+      "default": 250000,
+      "min": 20000,
+      "max": 1000000
+    }
+  }
+}

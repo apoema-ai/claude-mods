@@ -1,0 +1,62 @@
+{
+  "name": "chat-deck",
+  "version": "0.10.0",
+  "description": "Chat Deck: a live agent dashboard for Claude Code. Main model vitals, the task plan as a progress bar (absorbed from plan-bar), the session folder's git branch, PR and uncommitted files, an on-call architect, every permission check, the last build and test runs, the files edited, subagent cards with pixel crabs and swimlanes, the messages between the main chat and its subagents drawn as a graph, a turn receipt and a session log, all from real session events",
+  "author": {
+    "name": "rmendes"
+  },
+  "license": "MIT",
+  "keywords": [
+    "claude-code",
+    "claude-code-mod",
+    "claude-code-plugin",
+    "dashboard",
+    "subagents",
+    "agents",
+    "observability",
+    "tui"
+  ],
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "architectPattern": {
+      "title": "Architect pattern",
+      "description": "Regular expression (case-insensitive) for the agent types and server tools that count as the on-call architect, e.g. advisor|architect|reviewer",
+      "type": "string",
+      "default": "advisor|architect"
+    },
+    "paneColumns": {
+      "title": "Pane width",
+      "description": "Columns the pane asks for when docked beside a fullscreen transcript, 40 or more. Claude Code caps the dock at 45% of the terminal, and a width you dragged it to wins.",
+      "type": "number",
+      "default": 66
+    },
+    "layout": {
+      "title": "Layout",
+      "description": "auto: a summary of at most 8 rows when the pane sits inline above the prompt, two columns from 110 columns when docked, one column otherwise",
+      "type": "string",
+      "options": [
+        "auto",
+        "compact",
+        "wide",
+        "mini"
+      ],
+      "default": "auto"
+    },
+    "palette": {
+      "title": "Palette",
+      "description": "theme follows your Claude Code theme (light, dark, colour-blind); pastel is fixed colours tuned for dark terminals",
+      "type": "string",
+      "options": [
+        "theme",
+        "pastel"
+      ],
+      "default": "theme"
+    },
+    "openOnStart": {
+      "title": "Open on start",
+      "description": "Open the pane when a session starts",
+      "type": "boolean",
+      "default": true
+    }
+  }
+}

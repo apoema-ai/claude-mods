@@ -1,0 +1,32 @@
+{
+  "name": "rmendes-mods",
+  "metadata": {
+    "description": "Claude Code mods (TypeScript plugins) for the prompt band, panes, plan tracking and model fit",
+    "version": "1.0.0"
+  },
+  "owner": {
+    "name": "rmendes"
+  },
+  "plugins": [
+    {
+      "name": "cache-timer",
+      "source": "./cache-timer",
+      "description": "Counts down until the chat's prompt cache goes cold, with optional keep-warm ping"
+    },
+    {
+      "name": "chat-deck",
+      "source": "./chat-deck",
+      "description": "Live agent dashboard pane: model vitals, plan, git, permission checks, subagent cards"
+    },
+    {
+      "name": "chat-handoff",
+      "source": "./chat-handoff",
+      "description": "Offers a Refresh handoff of the whole chat at a token threshold"
+    },
+    {
+      "name": "model-fit",
+      "source": "./model-fit",
+      "description": "Checks whether the model and effort fit the task and offers a Switch button"
+    }
+  ]
+}

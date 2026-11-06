@@ -1,0 +1,57 @@
+{
+  "name": "model-fit",
+  "version": "0.3.0",
+  "description": "Model Fit: checks whether the chat's model and effort fit the task, shows a Switch button above the prompt when they do not, and can switch by itself (Auto). A cheap Haiku call judges each prompt or each skill start against a model-selection rubric.",
+  "author": {
+    "name": "rmendes"
+  },
+  "license": "MIT",
+  "keywords": [
+    "claude-code",
+    "claude-code-mod",
+    "claude-code-plugin",
+    "model",
+    "effort",
+    "cost"
+  ],
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "trigger": {
+      "title": "Trigger",
+      "description": "When to look for a Mismatch: off, prompt (every prompt and every skill start) or skill (only when a skill starts)",
+      "type": "string",
+      "options": ["prompt", "skill", "off"],
+      "default": "prompt"
+    },
+    "auto": {
+      "title": "Auto",
+      "description": "Switch to the Recommendation by itself. Off: the band offers a Switch button and nothing changes until you press it",
+      "type": "boolean",
+      "default": false
+    },
+    "guardTokens": {
+      "title": "Cache guard (tokens)",
+      "description": "Above this context size no cheaper model is recommended, because /model drops the prompt cache. Lowering effort stays allowed",
+      "type": "number",
+      "default": 80000
+    },
+    "models": {
+      "title": "Models",
+      "description": "Comma-separated models it may recommend: haiku, sonnet, opus",
+      "type": "string",
+      "default": "haiku,sonnet,opus"
+    },
+    "efforts": {
+      "title": "Efforts",
+      "description": "Comma-separated effort levels it may recommend: low, medium, high, xhigh",
+      "type": "string",
+      "default": "low,medium,high,xhigh"
+    },
+    "rubricFile": {
+      "title": "Rubric file",
+      "description": "Path of a Markdown file that replaces the built-in model-selection rules the Judge follows. Empty: the built-in rules",
+      "type": "string",
+      "default": ""
+    }
+  }
+}
