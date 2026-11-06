@@ -1,0 +1,19 @@
+{
+  "name": "pr-radar",
+  "version": "0.3.0",
+  "author": {
+    "name": "apoema"
+  },
+  "description": "PR Radar: a band above the prompt with the state of your open PRs (who reviewed, who you wait for) and the PRs you are asked to review (reviewed or not), with a Refresh button and a details pane.",
+  "license": "MIT",
+  "keywords": ["claude-code", "claude-code-mod", "claude-code-plugin", "github", "pull-request", "review"],
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "refreshMinutes": {
+      "title": "Refresh (minutes)",
+      "description": "How often to ask GitHub for the state of your PRs. The Refresh button asks at once.",
+      "type": "number",
+      "default": 5
+    }
+  }
+}

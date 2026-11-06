@@ -51,3 +51,10 @@ claude plugin test <path to cache-timer>
 ## Not included (compared with the mod this is based on)
 
 The Hand off button, the log file and the 60 s demo mode.
+
+## Version History
+
+- **0.13.0**: the band has the same padding as chat-handoff and model-fit (two columns each side, a little above and below).
+- **0.12.0**: the band is framed in a rounded border, like model-fit's.
+- **0.11.0**: every button has one design: a secondary button with its key badge.
+- **0.10.0**: one button hierarchy; the stop button reads `Stop keeping warm` (`s`).

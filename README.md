@@ -2,7 +2,7 @@
 
 **Make Claude Code show you what it is actually doing.**
 
-Four small mods that put the things you usually have to guess, or dig for, right where you can see them: a live dashboard of the whole session, a countdown to your prompt cache going cold, a nudge when the model is wrong for the job, and a clean handoff when a chat gets too long.
+Five small mods that put the things you usually have to guess, or dig for, right where you can see them: a live dashboard of the whole session, a countdown to your prompt cache going cold, a nudge when the model is wrong for the job, a clean handoff when a chat gets too long, and the state of your open pull requests.
 
 Everything runs locally, every number comes from a real session event, and every mod has an off switch you can flip with one command.
 
@@ -12,6 +12,7 @@ Everything runs locally, every number comes from a real session event, and every
 | [cache-timer](cache-timer) | Counts down until the prompt cache goes cold, and can keep it warm | 0.13.0 |
 | [model-fit](model-fit) | Checks whether the model and effort fit the task, with a Switch button | 0.11.0 |
 | [chat-handoff](chat-handoff) | Writes a handoff of the whole chat so work continues in a fresh one | 0.8.0 |
+| [pr-radar](pr-radar) | Your open GitHub PRs and the ones waiting on your review, in a band and a pane | 0.3.0 |
 
 Requires Claude Code 2.1.287 or later (mods are an early-access API, so details can move between releases).
 
@@ -25,6 +26,7 @@ Add the marketplace once, then install what you want:
 /plugin install cache-timer@apoema-claude-mods
 /plugin install model-fit@apoema-claude-mods
 /plugin install chat-handoff@apoema-claude-mods
+/plugin install pr-radar@apoema-claude-mods
 /reload-plugins
 ```
 
@@ -65,6 +67,10 @@ It acts on your behalf, so its README says exactly what it sends and what it cha
 
 At a token threshold you choose (250k by default) it offers Refresh. It writes a handoff of the whole chat, shows the steps with progress bars, then either copies it or starts a new chat with it. A draft is saved first and every run is logged.
 
+### pr-radar: your pull requests, at a glance
+
+A one-line band above the prompt counts your open PRs and only the numbers that matter: changes requested, approved, awaiting review, and how many wait on you. The pane groups them by what each needs, with reviewer states, ages and links, and a second tab for the PRs you have to review. It reads GitHub through your own `gh` login, keeps the answer in memory and writes nothing to disk. `/pr-radar hide` and `show` toggle the bar.
+
 ## One command per mod: on, off, status
 
 Every mod can be switched off in every chat, and back on, without uninstalling anything:
@@ -76,7 +82,7 @@ Every mod can be switched off in every chat, and back on, without uninstalling a
 | `/model-fit on`, `off` (plain `/model-fit` shows the status) | Off means no band and no Judge call |
 | `/chat-handoff on`, `off`, `status` | Off stops the Refresh offer |
 
-The command named after each mod also carries its other controls: `/chat-deck` opens the pane (with `close`, `reset` and `layout ...`), `/cache-timer warm` starts or stops keep warm, and `/model-fit trigger ...` and `auto ...` change its settings.
+The command named after each mod also carries its other controls: `/chat-deck` opens the pane (with `close`, `reset` and `layout ...`), `/cache-timer warm` starts or stops keep warm, and `/model-fit trigger ...` and `auto ...` change its settings. pr-radar has no switch file entry: `/pr-radar hide` and `show` toggle its bar, and uninstalling stops it.
 
 The state lives in one shared file, `~/.claude/mods/switches.json` (`"<mod>": false` means off), and each mod re-reads it every few seconds, so a chat that is already open follows along.
 

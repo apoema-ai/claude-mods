@@ -75,4 +75,11 @@ claude plugin test <path to chat-handoff>
 - Commands are `/chat-handoff` and `/chat-refresh`, so both mods can be loaded.
 - Home is read from `HOME`, not from the plugin path, so it works from any folder.
 - Later on the offer snoozes it for this chat. The original wrote `handoff:hidden` into the shared file.
-- No `mkdir` calls (`$.fs.write` creates folders) and no `.open-*` request file.
+- No `.open-*` request file. Handoff files are written with `$.fs.write`, which creates folders; the only `mkdir` is for the shared switch file `~/.claude/mods/switches.json`.
+
+## Version History
+
+- **0.8.0**: the band has the same padding as cache-timer and model-fit.
+- **0.7.0**: the band is framed in a rounded border: orange for the offer and while it builds, green when ready, red when it fails.
+- **0.6.0**: every button has one design: a secondary button with its key badge.
+- **0.5.0**: one button hierarchy: Refresh chat (`r`, focused) or Later (`l`); when ready, Copy handoff (`c`), New chat (`n`), Preview (`p`), Open file (`o`) and Close (`x`).

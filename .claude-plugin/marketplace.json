@@ -27,6 +27,11 @@
       "name": "model-fit",
       "source": "./model-fit",
       "description": "Checks whether the model and effort fit the task and offers a Switch button"
+    },
+    {
+      "name": "pr-radar",
+      "source": "./pr-radar",
+      "description": "Shows the state of your open GitHub PRs in a band above the prompt, with a details pane"
     }
   ]
 }
