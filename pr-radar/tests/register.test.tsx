@@ -65,6 +65,21 @@ test('the timer refreshes again after the interval', async ($, on) => {
   expect(graphql(calls)).toBe(6)
 })
 
+test('Manual stops the timer refreshes, Auto brings them back', async ($, on) => {
+  const { calls, clock } = rig(on)
+  await $.session.start({ surface: 'terminal', isInteractive: true, cwd: '/work' })
+  await clock.settle()
+  const answer = (await $.command.run({ command: 'pr-radar', args: 'manual' } as never)) as { text: string }
+  expect(answer.text).toContain('Manual')
+  await clock.advance(5 * 60_000)
+  expect(graphql(calls)).toBe(3)
+  await $.command.run({ command: 'pr-radar', args: 'refresh' } as never)
+  expect(graphql(calls)).toBe(6)
+  await $.command.run({ command: 'pr-radar', args: 'auto' } as never)
+  await clock.advance(5 * 60_000)
+  expect(graphql(calls)).toBe(9)
+})
+
 test('a failing gh keeps the report and shows the reason', async ($, on) => {
   rig(on, { fail: true })
   await $.session.start({ surface: 'terminal', isInteractive: true, cwd: '/work' })
@@ -82,9 +97,14 @@ for (const surface of ['terminal', 'desktop'] as const) {
     const ui = await $.ui.mount({ plugin: 'pr-radar', component: 'AbovePrompt', requestId: 'band', surface, viewport, props: { hasSurvey: false, isWorking: false, maxRows: 8, bodyColumns: 116, scroll: { offset: 0, bodyRows: 8 }, view: 'band' } as never })
     expect(await ui.find({ type: 'Text', text: '2 open' })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: '1 approved' })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: '1 awaiting review' })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: '1 needs your review' })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: '0 changes requested' })).toBeUndefined()
+    expect(await ui.find({ type: 'Text', text: '1 awaiting' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: '1 to review' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: '0 changes' })).toBeUndefined()
+    // Desktop draws the label, so the short text must be the label.
+    expect(((await ui.find({ key: 'radar-hide' }))?.props as { label?: string } | undefined)?.label).toBe('✕')
+    expect(((await ui.find({ key: 'radar-refresh' }))?.props as { label?: string } | undefined)?.label).toMatch(/^↻ /)
+    // Hotkey badges only where they cost nothing: the terminal.
+    expect(((await ui.find({ key: 'radar-open' }))?.props as { hotkey?: string } | undefined)?.hotkey).toBe(surface === 'terminal' ? 'o' : undefined)
     await ui.press({ key: 'radar-refresh' })
     await clock.settle()
     expect(graphql(calls)).toBe(6)
@@ -102,6 +122,36 @@ for (const surface of ['terminal', 'desktop'] as const) {
     expect(await ui.find({ type: 'Text', text: '● Awaiting first review' })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: 'ana ✓' })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: 'no reviews yet' })).toBeDefined()
+    await ui.unmount()
+  })
+
+  test(`the mode button flips between Auto and Manual on ${surface}`, async ($, on) => {
+    const { calls, clock } = rig(on)
+    await $.session.start({ surface, isInteractive: true, cwd: '/work' })
+    await clock.settle()
+    const ui = await $.ui.mount({ plugin: 'pr-radar', component: 'AbovePrompt', requestId: 'band', surface, viewport, props: { hasSurvey: false, isWorking: false, maxRows: 8, bodyColumns: 116, scroll: { offset: 0, bodyRows: 8 }, view: 'band' } as never })
+    const label = async () => ((await ui.find({ key: 'radar-mode' }))?.props as { label?: string } | undefined)?.label
+    expect(await label()).toBe('Auto')
+    await ui.press({ key: 'radar-mode' })
+    expect(await label()).toBe('Manual')
+    await clock.advance(5 * 60_000)
+    expect(graphql(calls)).toBe(3)
+    await ui.press({ key: 'radar-mode' })
+    expect(await label()).toBe('Auto')
+    await ui.unmount()
+  })
+
+  test(`the pane has the same mode button on ${surface}`, async ($, on) => {
+    const { calls, clock } = rig(on)
+    await $.session.start({ surface, isInteractive: true, cwd: '/work' })
+    await clock.settle()
+    const ui = await $.ui.mount({ plugin: 'pr-radar', component: 'Pane', requestId: 'pr-radar', surface, viewport, props: { title: 'PR Radar', isFocused: true, bodyColumns: 100, placement: 'dock', scroll: { offset: 0, bodyRows: 30 }, view: 'pane' } as never })
+    const label = async () => ((await ui.find({ key: 'radar-mode' }))?.props as { label?: string } | undefined)?.label
+    expect(await label()).toBe('Auto · 5m')
+    await ui.press({ key: 'radar-mode' })
+    expect(await label()).toBe('Manual')
+    await clock.advance(5 * 60_000)
+    expect(graphql(calls)).toBe(3)
     await ui.unmount()
   })
 

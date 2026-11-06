@@ -28,6 +28,8 @@ declare module 'claude-code' {
       sort: { field: 'repo' | 'title' | 'number'; dir: 'asc' | 'desc' } | null
       /** The bar above the prompt is hidden for this session. */
       hidden: boolean
+      /** Auto refreshes on the timer; Manual only when Refresh is pressed. */
+      mode: 'auto' | 'manual'
     }
   }
 }

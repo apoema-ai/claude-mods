@@ -1,17 +1,19 @@
 # pr-radar
 
-**Version:** 0.3.0
+**Version:** 0.4.0
 
 A Claude Code mod (function hooks, Claude Code 2.1.287+) that shows the state of your open GitHub PRs in a band above the prompt, with a details pane and a Refresh button.
 
 ## What it shows
 
-**The band** (one line, indigo border): how many PRs you have open, then only the counts that are not zero: changes requested (red), approved (green), awaiting review, and how many need your review (amber). The right side shows how long ago it refreshed, `Refresh` (`r`), `Open` (`o`) and `Hide` (`h`). Hide removes the bar for the rest of the session; `/pr-radar show`, or `Show bar` (`b`) in the pane, brings it back.
+**The band** (one line, indigo border): how many PRs you have open, then only the counts that are not zero: `changes` requested (red), `approved` (green), `awaiting` a first review, and `to review` by you (amber). The right side holds four small controls: the refresh mode (`Auto` or `Manual`, `a`), `↻ 1m` which refreshes and shows how long ago it last did (`⚠ ↻ 1m` when the last refresh failed, `r`), `Open` (`o`) and `✕` to hide the bar (`h`). The hotkeys work while the band holds the focus; desktop leaves their badges off to save room. Auto refreshes on the timer; Manual only when you press Refresh (it still fetches once when the session starts). Hide removes the bar for the rest of the session; `/pr-radar show`, or `Show bar` (`b`) in the pane, brings it back.
 
 **The pane** (`Open`, or `/pr-radar`) has two tabs. It opens on **To review** when something waits on you, otherwise on **My PRs**.
 
 - **My PRs** (`m`), grouped by what each needs, most actionable first: Changes requested, Approved, In review, Awaiting first review, Drafts.
 - **To review** (`v`): Needs your review, New commits since your review, Reviewed.
+
+The top right of the pane has the same `Auto · 5m` / `Manual` button (`a`) and `Refresh` (`r`) as the bar.
 
 **Sort by** sorts the PRs inside each group: `Repository` (`e`, the default), `Title` (`t`, numbers in ticket keys compare as numbers, so INV-2 comes before INV-10) or `Number` (`n`). `↑ Asc` / `↓ Desc` (`d`) flips the direction, and pressing the chosen field again does the same. The choice lasts for the session.
 
@@ -34,9 +36,10 @@ It runs `gh api graphql` (and `gh api user` once) with your own `gh` login, thre
 | `/pr-radar` | Opens the pane (prints the report where nothing draws) |
 | `/pr-radar text` | Prints the report in the chat |
 | `/pr-radar refresh` | Asks GitHub again |
+| `/pr-radar auto`, `manual` | Refreshes on the timer, or only when you press Refresh |
 | `/pr-radar hide`, `show` | Hides or shows the bar above the prompt |
 
-Setting `refreshMinutes` (plugin option, default 5) is how often it refreshes by itself.
+Plugin options: `refreshMode` (`auto` or `manual`, default `auto`) is the mode each session starts in, and `refreshMinutes` (default 5) is how often Auto refreshes. Switching the mode from the bar or the command lasts for the session.
 
 ## Known limits
 
@@ -47,6 +50,7 @@ Setting `refreshMinutes` (plugin option, default 5) is how often it refreshes by
 
 ## Version History
 
+- **0.4.0**: Compact bar on one line (`Auto`, `↻ 1m`, `Open`, `✕`; no hotkey badges on desktop; shorter counts). Auto and Manual refresh modes on the bar and the pane, `/pr-radar auto|manual`, and the `refreshMode` option.
 - **0.3.0**: Sort by repository, title or number, ascending or descending. A Hide button on the bar, and `/pr-radar hide|show`.
 - **0.2.0**: redesign. Indigo band on one line with only the counts that matter. Pane with My PRs and To review tabs, PRs grouped by what they need, colored reviewer states, ages, links, short names, and empty, loading and error states.
 - **0.1.0**: first release.

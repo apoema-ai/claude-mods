@@ -32,6 +32,7 @@ const BUSY = { plugin: 'pr-radar', key: 'busy' } as const
 const TAB = { plugin: 'pr-radar', key: 'tab' } as const
 const SORT = { plugin: 'pr-radar', key: 'sort' } as const
 const HIDDEN = { plugin: 'pr-radar', key: 'hidden' } as const
+const MODE = { plugin: 'pr-radar', key: 'mode' } as const
 const SORT_LABEL: Record<SortField, string> = { repo: 'Repository', title: 'Title', number: 'Number' }
 const SORT_KEY: Record<SortField, string> = { repo: 'e', title: 't', number: 'n' }
 const PANE = 'pr-radar'
@@ -59,6 +60,10 @@ const WAIT_CAP = 3
 // The login of the person running the session, learnt once from `gh`.
 let me = ''
 let everyMs = 5 * 60_000
+let startMode: Mode = 'auto'
+
+type Mode = 'auto' | 'manual'
+const everyLabel = () => (everyMs % 3_600_000 ? `${everyMs / 60_000}m` : `${everyMs / 3_600_000}h`)
 
 /** One `gh api graphql` search; the search text is data passed as a variable, never part of the query. */
 async function search($: EngineInterface, q: string): Promise<Pr[]> {
@@ -106,21 +111,31 @@ async function setHidden($: EngineInterface, hidden: boolean) {
   if (hidden) $.ui.toast('PR Radar bar hidden. /pr-radar show brings it back.')
 }
 
+const modeText = (mode: Mode) => (mode === 'auto' ? `PR Radar: Auto, refreshes every ${everyLabel()}.` : 'PR Radar: Manual, refreshes only when you press Refresh.')
+
+/** The timer keeps ticking; a tick in Manual does nothing, so switching back needs no new timer. */
+async function tick($: EngineInterface) {
+  const { value: mode = startMode } = await $.state.get(MODE)
+  if (mode === 'auto') await refresh($)
+}
+
 export const register: Register = (on, options) => {
   const minutes = Number(options.refreshMinutes)
   everyMs = Math.max(1, Number.isFinite(minutes) ? minutes : 5) * 60_000
+  startMode = String(options.refreshMode ?? 'auto').toLowerCase() === 'manual' ? 'manual' : 'auto'
 
   on('session.start', async ($, e, next) => {
+    await $.state.set(MODE, startMode)
     $.clock.every(everyMs, () => {
-      void refresh($).catch(() => undefined)
+      void tick($).catch(() => undefined)
     })
     $.clock.after(0, () => {
       void refresh($).catch(() => undefined)
     })
     await $.command.register({
       name: NAME,
-      description: 'PR Radar: open the details pane, "text" prints the report here, "refresh" asks GitHub again, "hide"/"show" the bar',
-      argumentHint: '[text|refresh|hide|show]',
+      description: 'PR Radar: open the details pane, "text" prints the report here, "refresh" asks GitHub again, "auto"/"manual" sets how it refreshes, "hide"/"show" the bar',
+      argumentHint: '[text|refresh|auto|manual|hide|show]',
       immediate: true,
     })
     return next(e)
@@ -131,6 +146,10 @@ export const register: Register = (on, options) => {
     if (arg === 'refresh') {
       await refresh($)
       return { text: 'PR Radar: refreshed.' }
+    }
+    if (arg === 'auto' || arg === 'manual') {
+      await $.state.set(MODE, arg)
+      return { text: modeText(arg) }
     }
     if (arg === 'hide' || arg === 'show') {
       await $.state.set(HIDDEN, arg === 'hide')
@@ -178,6 +197,13 @@ export const register: Register = (on, options) => {
     await $.state.set(SORT, { field: s.field, dir: s.dir === 'asc' ? 'desc' : 'asc' })
     return { element: e.element }
   })
+  on('ui.press', { plugin: NAME, element: 'radar-mode' }, async ($, e) => {
+    const { value: mode = startMode } = await $.state.get(MODE)
+    const nextMode: Mode = mode === 'auto' ? 'manual' : 'auto'
+    await $.state.set(MODE, nextMode)
+    $.ui.toast(modeText(nextMode))
+    return { element: e.element }
+  })
   on('ui.press', { plugin: NAME, element: 'radar-hide' }, async ($, e) => {
     await setHidden($, true)
     return { element: e.element }
@@ -194,6 +220,7 @@ export const register: Register = (on, options) => {
     if (hidden) return next(e)
     const { value: data = null } = await $.state.get(DATA)
     const { value: busy = false } = await $.state.get(BUSY)
+    const { value: mode = startMode } = await $.state.get(MODE)
     const drawn = await Promise.resolve(next(e)).catch(() => null)
     const rest = drawn && typeof drawn === 'object' && (drawn as { type?: string }).type !== 'engine' ? drawn : null
     const { Box, Text, Button } = $.ui.resolve(e)
@@ -206,21 +233,20 @@ export const register: Register = (on, options) => {
     const parts = c
       ? [
           <Text key="b-open">{`${c.mine} open`}</Text>,
-          c.changes ? <Text key="b-changes" color={RED}>{`${c.changes} changes requested`}</Text> : null,
+          c.changes ? <Text key="b-changes" color={RED}>{`${c.changes} changes`}</Text> : null,
           c.approved ? <Text key="b-approved" color={GREEN}>{`${c.approved} approved`}</Text> : null,
-          c.unreviewed ? <Text key="b-unrev">{`${c.unreviewed} awaiting review`}</Text> : null,
+          c.unreviewed ? <Text key="b-unrev">{`${c.unreviewed} awaiting`}</Text> : null,
           c.pending ? (
             <Text key="b-pending" color={AMBER} bold>
-              {`${c.pending} need${c.pending === 1 ? 's' : ''} your review`}
+              {`${c.pending} to review`}
             </Text>
-          ) : (
-            <Text key="b-pending" dimColor>
-              no reviews pending
-            </Text>
-          ),
+          ) : null,
         ].filter(Boolean)
       : []
-    const status = busy ? 'refreshing…' : data?.error ? '⚠ GitHub unreachable' : data ? ago(data.at, Date.now()) : ''
+    // Desktop draws a badge per hotkey, which costs more room than the label; the terminal draws none.
+    const hk = (k: string) => (e.surface === 'terminal' ? k : undefined)
+    const age = busy ? '…' : data ? ago(data.at, Date.now()) : ''
+    const failed = !!data?.error && !busy
     return (
       <Box flexDirection="column" rowGap="sm">
         {rest as never}
@@ -232,18 +258,15 @@ export const register: Register = (on, options) => {
               </Text>
             </Box>
             <Box key="radar-summary" flexShrink={1}>
-              <Text wrap="truncate">{c ? parts.flatMap((p, i) => (i ? [sep(`s${i}`), p] : [p])) : <Text dimColor>{busy ? 'Fetching your PRs…' : 'No data yet'}</Text>}</Text>
+              <Text wrap="truncate">{c ? parts.flatMap((p, i) => (i ? [sep(`s${i}`), p] : [p])) : <Text dimColor>{busy ? 'Fetching your PRs…' : failed ? 'GitHub unreachable' : 'No data yet'}</Text>}</Text>
             </Box>
           </Box>
-          <Box key="radar-actions" flexDirection="row" alignItems="center" gap={2} flexShrink={0}>
-            {status ? (
-              <Text key="radar-status" color={data?.error && !busy ? RED : undefined} dimColor={!data?.error || busy}>
-                {status}
-              </Text>
-            ) : null}
-            <Button variant="secondary" key="radar-refresh" label="Refresh" hotkey="r" dimColor={busy} onPress={() => undefined} />
-            <Button variant="secondary" key="radar-open" label="Open" hotkey="o" onPress={() => undefined} />
-            <Button variant="secondary" key="radar-hide" role="dismiss" label="Hide" hotkey="h" onPress={() => undefined} />
+          <Box key="radar-actions" flexDirection="row" alignItems="center" gap={1} flexShrink={0}>
+            {/* Desktop draws `label`, not children, and draws dimColor as disabled: the visible text goes in label, nothing dim but a busy Refresh. */}
+            <Button variant="secondary" key="radar-mode" label={mode === 'auto' ? 'Auto' : 'Manual'} hotkey={hk('a')} onPress={() => undefined} />
+            <Button variant="secondary" key="radar-refresh" label={`${failed ? '⚠ ' : ''}↻${age ? ` ${age}` : ''}`} hotkey={hk('r')} dimColor={busy} onPress={() => undefined} />
+            <Button variant="secondary" key="radar-open" label="Open" hotkey={hk('o')} onPress={() => undefined} />
+            <Button variant="secondary" key="radar-hide" role="dismiss" label="✕" hotkey={hk('h')} onPress={() => undefined} />
           </Box>
         </Box>
       </Box>
@@ -258,6 +281,7 @@ export const register: Register = (on, options) => {
     const { value: chosen = null } = await $.state.get(TAB)
     const { value: sortState = null } = await $.state.get(SORT)
     const { value: hidden = false } = await $.state.get(HIDDEN)
+    const { value: mode = startMode } = await $.state.get(MODE)
     const sort = sortState ?? DEFAULT_SORT
     const { Box, Text, Button, Link } = $.ui.resolve(e)
     const now = Date.now()
@@ -375,6 +399,7 @@ export const register: Register = (on, options) => {
           <Box key="right" flexDirection="row" alignItems="center" gap={2}>
             <Text dimColor>{busy ? 'Refreshing…' : data ? `Updated ${ago(data.at, now)} ago`.replace('now ago', 'just now') : ''}</Text>
             {hidden ? <Button variant="secondary" key="radar-show" label="Show bar" hotkey="b" onPress={() => undefined} /> : null}
+            <Button variant="secondary" key="radar-mode" label={mode === 'auto' ? `Auto · ${everyLabel()}` : 'Manual'} hotkey="a" onPress={() => undefined} />
             <Button variant="secondary" key="radar-refresh" label="Refresh" hotkey="r" dimColor={busy} onPress={() => undefined} />
           </Box>
         </Box>

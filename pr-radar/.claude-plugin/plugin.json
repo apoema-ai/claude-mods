@@ -1,6 +1,6 @@
 {
   "name": "pr-radar",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "author": {
     "name": "apoema"
   },
@@ -9,6 +9,12 @@
   "keywords": ["claude-code", "claude-code-mod", "claude-code-plugin", "github", "pull-request", "review"],
   "types": "./types/index.d.ts",
   "userConfig": {
+    "refreshMode": {
+      "title": "Refresh mode",
+      "description": "auto: refresh every refreshMinutes. manual: only when you press Refresh. The bar's Auto/Manual button switches it for the session.",
+      "type": "string",
+      "default": "auto"
+    },
     "refreshMinutes": {
       "title": "Refresh (minutes)",
       "description": "How often to ask GitHub for the state of your PRs. The Refresh button asks at once.",
