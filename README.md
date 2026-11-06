@@ -9,7 +9,7 @@ Everything runs locally, every number comes from a real session event, and every
 | Mod | In one line | Version |
 |---|---|---|
 | [chat-deck](chat-deck) | A live pane beside the transcript: vitals, plan, git, permission checks, subagent cards | 0.11.0 |
-| [cache-timer](cache-timer) | Counts down until the prompt cache goes cold, and can keep it warm | 0.6.0 |
+| [cache-timer](cache-timer) | Counts down until the prompt cache goes cold, and can keep it warm | 0.7.0 |
 | [model-fit](model-fit) | Checks whether the model and effort fit the task, with a Switch button | 0.4.0 |
 | [chat-handoff](chat-handoff) | Writes a handoff of the whole chat so work continues in a fresh one | 0.4.0 |
 
@@ -53,7 +53,7 @@ It also registers a `plan` tool, so Claude can keep its task list where you can 
 
 ### cache-timer: know before the cache goes cold
 
-Prompt caching makes long chats cheap, until the cache expires and the next message pays to write the whole chat again. cache-timer draws a countdown above the prompt, reads the real cache length from the chat's transcript, and warns you when a model switch or a compaction has just reset it. `/keepwarm` sends a tiny ping shortly before the deadline if you want to keep the discount.
+Prompt caching makes long chats cheap, until the cache expires and the next message pays to write the whole chat again. cache-timer draws a countdown above the prompt, reads the real cache length from the chat's transcript, and warns you when a model switch or a compaction has just reset it. `/keep-warm` sends a tiny ping shortly before the deadline if you want to keep the discount.
 
 ### model-fit: the right model for the job
 

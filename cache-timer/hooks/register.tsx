@@ -360,7 +360,7 @@ const NOTHING_YET = "Nothing to keep warm yet. It works after Claude's first rep
 async function toggleWarm($: EngineInterface) {
   if (await read($, warm)) return stopWarm($, 'Keep warm is off.')
   const r = await startWarm($)
-  say($, r === 'started' ? 'Keep warm is on. Type /keepwarm off to stop it.' : r === 'cold' ? 'The cache just went cold. Use Rewarm now to write it again.' : NOTHING_YET)
+  say($, r === 'started' ? 'Keep warm is on. Type /keep-warm off to stop it.' : r === 'cold' ? 'The cache just went cold. Use Rewarm now to write it again.' : NOTHING_YET)
 }
 
 // The cold band's button: the first press arms it, a second press within ARM_MS rewarms.
@@ -385,8 +385,8 @@ async function warmTick($: EngineInterface) {
   const w = await read($, warm)
   if (!w || pinging || working || switchOff) return
   const now = await $.clock.now()
-  if (now - w.startedAt >= MAX_MS) return stopWarm($, 'Keep warm stopped after 2 hours. Type /keepwarm to start it again.')
-  if (w.pings >= MAX_PINGS) return stopWarm($, `Keep warm stopped after ${MAX_PINGS} pings. Type /keepwarm to start it again.`)
+  if (now - w.startedAt >= MAX_MS) return stopWarm($, 'Keep warm stopped after 2 hours. Type /keep-warm to start it again.')
+  if (w.pings >= MAX_PINGS) return stopWarm($, `Keep warm stopped after ${MAX_PINGS} pings. Type /keep-warm to start it again.`)
   if (now < w.retryAt) return
   const c = await read($, clock)
   if (!c || c.lastEnd + c.ttlMs - now > LEAD) return
@@ -421,7 +421,7 @@ async function ping($: EngineInterface, w: Warm, start: number) {
         : cur,
     )
     await update($, clock, cur => (cur ? { ...cur, lastEnd: Math.max(cur.lastEnd, start), now } : cur))
-    if (n >= MAX_PINGS) await stopWarm($, `Keep warm stopped after ${MAX_PINGS} pings. Type /keepwarm to start it again.`)
+    if (n >= MAX_PINGS) await stopWarm($, `Keep warm stopped after ${MAX_PINGS} pings. Type /keep-warm to start it again.`)
     return
   }
   // A failed ping did not reach the cache, so it does not count toward MAX_PINGS; MAX_FAILS bounds the retries.
@@ -456,8 +456,8 @@ export const register: Register = on => {
       immediate: true,
     })
     await $.command.register({
-      name: 'keepwarm',
-      description: 'Cache Timer: keep the cache warm with a small background ping 45 s before it goes cold. "/keepwarm off" stops it, "/keepwarm now" rewarms a cold cache',
+      name: 'keep-warm',
+      description: 'Cache Timer: keep the cache warm with a small background ping 45 s before it goes cold. "/keep-warm off" stops it, "/keep-warm now" rewarms a cold cache',
       argumentHint: '[off|now]',
       immediate: true,
     })
@@ -509,30 +509,30 @@ export const register: Register = on => {
   // The person is back: a prompt of theirs ends keep warm. Its own commands do not.
   on('prompt.submit', async ($, e, next) => {
     const text = e.text.trim().toLowerCase()
-    const own = text.startsWith('/keepwarm') || text.startsWith('/cache-timer') || text === PING_PROMPT.toLowerCase()
+    const own = text.startsWith('/keep-warm') || text.startsWith('/cache-timer') || text === PING_PROMPT.toLowerCase()
     if (!own && !BACKGROUND.has(e.origin?.kind ?? '')) {
       void stopWarm($, 'Keep warm stopped: you sent a message.').catch(() => undefined)
     }
     return next(e)
   }).catch(async ($, e, next) => next(e)) // only watches: if it fails, the message still goes through
 
-  on('command.run', { command: 'keepwarm' }, async ($, e) => {
+  on('command.run', { command: 'keep-warm' }, async ($, e) => {
     const arg = e.args.trim().toLowerCase()
     const running = (await read($, warm)) !== null
     if (arg === 'off' || (arg !== 'on' && arg !== 'now' && running)) {
       await update($, warm, () => null)
-      return { text: 'Keep warm is off. Type /keepwarm to start it again.' }
+      return { text: 'Keep warm is off. Type /keep-warm to start it again.' }
     }
-    if (running) return { text: 'Keep warm is already on. Type /keepwarm off to stop it.' }
+    if (running) return { text: 'Keep warm is already on. Type /keep-warm off to stop it.' }
     const r = await startWarm($, arg === 'now')
     if (r === 'none') return { text: NOTHING_YET }
     if (r === 'cold') {
       const c = await read($, clock)
       return {
-        text: `The cache is already cold, so the first ping would write all ${short(c?.tokens ?? 0)} tokens to it again, at the cache-write price. Type /keepwarm now to do that anyway, or just send your next message.`,
+        text: `The cache is already cold, so the first ping would write all ${short(c?.tokens ?? 0)} tokens to it again, at the cache-write price. Type /keep-warm now to do that anyway, or just send your next message.`,
       }
     }
-    const limits = 'It stops after 2 hours, 30 pings, or when you send a message. Type /keepwarm off to stop it.'
+    const limits = 'It stops after 2 hours, 30 pings, or when you send a message. Type /keep-warm off to stop it.'
     if (arg === 'now') return { text: `Rewarming now: the first ping writes the chat to the cache again, then keep warm pings about 45 s before it would go cold. ${limits}` }
     return { text: `Keep warm is on: one small background ping about 45 s before the cache goes cold, so the chat is read from the cache instead of written again. ${limits}` }
   })
