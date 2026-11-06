@@ -1,6 +1,6 @@
 # model-fit
 
-**Version:** 0.7.0
+**Version:** 0.8.0
 
 A Claude Code mod (function hooks, Claude Code 2.1.287+) that checks whether the chat's model and effort fit the task in front of it. When they do not, a band above the prompt offers a Switch button. An Auto toggle lets the mod switch by itself.
 
@@ -42,7 +42,7 @@ With Auto on, the prompt waits up to 3 seconds for the Judge, the current turn's
 | `/model-fit trigger off`, `trigger prompt`, `trigger skill` | Sets the trigger. `trigger off` stops the looks but keeps the mod on; `/model-fit off` switches the mod off |
 | `/model-fit auto on`, `auto off` | Sets Auto (on also ends a pause) |
 
-The band holds the same controls: Switch, Trigger, Auto and a dismiss button. The `▾` button in its header collapses it to one line: the move (or the current setting), the Switch button while an offer is up, the Auto state, and `▸` to expand it again. The reason, the cache warning, Trigger and Auto wait behind the toggle. The choice is kept in the settings file, so the band starts collapsed in the next chat too. Settings are kept in `~/.claude/mods/model-fit.json` (`trigger`, `auto`, `collapsed`, `guardTokens`, `models`, `efforts`, `rubricFile`); `/model-fit` and the band write it, and you can edit it by hand. The host lists no `/config` rows for a plugin loaded from a folder, so the file is the one place they live.
+The band holds the same controls: Switch (the primary, named for its target, `s`), Trigger, Auto and Dismiss (`x`). The `▾` button in its header collapses it to one line: the model and effort as `opus | medium` (the effort is a dash until the chat's first request reports it), or the move from one pair to the other while an offer is up, the Switch button while an offer is up, the Auto state, and `▸` to expand it again. The reason, the cache warning, Trigger and Auto wait behind the toggle. The choice is kept in the settings file, so the band starts collapsed in the next chat too. Settings are kept in `~/.claude/mods/model-fit.json` (`trigger`, `auto`, `collapsed`, `guardTokens`, `models`, `efforts`, `rubricFile`); `/model-fit` and the band write it, and you can edit it by hand. The host lists no `/config` rows for a plugin loaded from a folder, so the file is the one place they live.
 
 ## Known limits
 
@@ -54,6 +54,7 @@ The band holds the same controls: Switch, Trigger, Auto and a dismiss button. Th
 
 ## Version History
 
+- **0.8.0**: one button hierarchy: `Switch to <model · effort>` is the primary (`s`, focused), the dismiss reads `Dismiss` (`x`) and is the close control on desktop; collapsed, the band shows the model and effort as `opus | medium`.
 - **0.7.0**: Switch and go is gone; the card has one action, Switch, and the mod never sends a prompt.
 - **0.6.0**: `/model-fit status` is gone; plain `/model-fit` shows the status.
 - **0.5.0**: the band collapses to one line with a `▾`/`▸` toggle; the choice is kept in `model-fit.json`.

@@ -504,6 +504,17 @@ export const register: Register = (on, options) => {
     if (collapsed) {
       // One line: the title, the move (or the setting), and the one button that acts. Reason, warning, Trigger and Auto wait behind the toggle.
       const tag = auto ? (isPaused ? 'Auto: paused' : 'Auto: on') : null
+      // `opus | medium`: the model and the effort side by side. The effort is learnt from the chat's first request, so it is a dash until then;
+      // a Recommendation that keeps the effort shows the one in use on both sides.
+      const pair = (k: string, model: string, effort: string, color?: string, dim = false, strike = false) => (
+        <Text key={k} dimColor={dim} strikethrough={strike}>
+          <Text bold={!dim} color={color}>
+            {aliasOf(model) ?? (model || '—')}
+          </Text>
+          <Text dimColor> | </Text>
+          <Text color={color}>{effort || '—'}</Text>
+        </Text>
+      )
       return (
         <Box flexDirection="column" rowGap="sm">
           {rest as never}
@@ -515,18 +526,12 @@ export const register: Register = (on, options) => {
               {o ? (
                 <Box key="fit-move" flexDirection="row" gap={1}>
                   <Text color={accent}>{up ? '▲' : '▼'}</Text>
-                  <Text dimColor strikethrough>
-                    {label(o.from.model, o.from.effort)}
-                  </Text>
+                  {pair('fit-from', o.from.model, o.from.effort, undefined, true, true)}
                   <Text dimColor>→</Text>
-                  <Text bold color={accent}>
-                    {label(o.to.model, o.to.keepEffort ? '' : o.to.effort)}
-                  </Text>
+                  {pair('fit-to', o.to.model, o.to.keepEffort ? o.from.effort : o.to.effort, accent)}
                 </Box>
               ) : (
-                <Text key="fit-now" dimColor>
-                  {label(now?.model ?? '', now?.effort ?? '')}
-                </Text>
+                pair('fit-now', now?.model ?? '', now?.effort ?? '')
               )}
               {warn ? (
                 <Text key="fit-cache" color={AMBER}>
@@ -540,7 +545,7 @@ export const register: Register = (on, options) => {
                   Queued
                 </Text>
               ) : o && !autoActs ? (
-                <Button key="fit-switch" label="Switch" onPress={() => undefined} />
+                <Button key="fit-switch" label="Switch" variant="primary" hotkey="s" onPress={() => undefined} />
               ) : null}
               {tag ? (
                 <Text key="fit-tag" color={isPaused ? AMBER : undefined} dimColor={!isPaused}>
@@ -566,7 +571,7 @@ export const register: Register = (on, options) => {
             </Box>
             <Box key="fit-head-buttons" flexDirection="row" gap={1}>
               <Button key="fit-collapse" label="▾" plain dimColor onPress={() => undefined} />
-              {auto ? null : <Button key="fit-dismiss" label="✕" plain dimColor onPress={() => undefined} />}
+              {auto ? null : <Button key="fit-dismiss" label="Dismiss" role="dismiss" hotkey="x" plain dimColor onPress={() => undefined} />}
             </Box>
           </Box>
           {o ? (
@@ -604,7 +609,8 @@ export const register: Register = (on, options) => {
                 Switch
               </Text>
             ) : o ? (
-              <Button key="fit-switch" label="Switch" onPress={() => undefined} />
+              // One primary per card, named for what it does; Enter presses it once the band has the focus.
+              <Button key="fit-switch" label={`Switch to ${label(o.to.model, o.to.keepEffort ? '' : o.to.effort)}`} variant="primary" hotkey="s" autoFocus onPress={() => undefined} />
             ) : null}
             <Button key="fit-trigger" label={`Trigger: ${trigger}`} plain dimColor onPress={() => undefined} />
             <Button key="fit-auto" label={`Auto: ${auto ? (isPaused ? 'paused' : 'on') : 'off'}`} plain dimColor onPress={() => undefined} />

@@ -570,14 +570,15 @@ export const register: Register = on => {
             <Text wrap="truncate-end" color={w.error || w.cold ? BAD : COLD}>
               {`◷ Keeping cache warm · ${pingStatus(w, left)}`}
             </Text>
-            <Button plain key="stop" hotkey="s" label="Stop" onPress={() => stopWarm($, 'Keep warm is off.')} />
+            <Button variant="secondary" key="stop" hotkey="s" label="Stop keeping warm" onPress={() => stopWarm($, 'Keep warm is off.')} />
           </Box>
         </Box>
       )
     }
 
-    const hideButton = <Button plain dimColor key="hide" hotkey="h" label="Hide" onPress={() => hide($)} />
-    const warmButton = <Button plain key="keepwarm" hotkey="w" label={w ? 'Stop keeping warm' : 'Keep warm'} onPress={() => toggleWarm($)} />
+    // One hierarchy in every state: keep warm spends tokens, so it is a secondary, never the primary; Hide closes the band.
+    const hideButton = <Button plain dimColor role="dismiss" key="hide" hotkey="h" label="Hide" onPress={() => hide($)} />
+    const warmButton = <Button variant="secondary" key="keepwarm" hotkey="w" label={w ? 'Stop keeping warm' : 'Keep warm'} onPress={() => toggleWarm($)} />
     const warmRow = w ? <Text color={w.cold || w.error ? BAD : COLD}>{warmLine(w, left, c.now)}</Text> : null
     const showDetail = cols >= COLS_DETAIL
     // The last turn's first request found the cache reset while this band said warm: say what it cost, until the next reply.
@@ -679,9 +680,10 @@ export const register: Register = on => {
     const coldButton = w ? (
       warmButton
     ) : isArmed ? (
+      // The second press is the safeguard, so the confirm is the primary but never takes the focus by itself.
       <Button key="rewarm" hotkey="w" variant="primary" label={`Confirm: write ${short(c.tokens)} tokens`} onPress={() => rewarm($)} />
     ) : (
-      <Button plain key="rewarm" hotkey="w" label="Rewarm now" onPress={() => rewarm($)} />
+      <Button variant="secondary" key="rewarm" hotkey="w" label="Rewarm now" onPress={() => rewarm($)} />
     )
     const coldParts = [
       <Text key="label" color={COLD}>

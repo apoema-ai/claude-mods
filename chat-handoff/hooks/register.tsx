@@ -712,8 +712,8 @@ export const register: Register = (on, options) => {
     const Svg = e.surface !== 'terminal' && 'Svg' in els ? els.Svg : null
     const noop = () => undefined
 
-    // `plain` wins over `variant`, so the one main action of each state is drawn with
-    // chrome (the terminal marks it too); the other actions stay plain.
+    // One hierarchy in every state: one primary (chrome, the focus, a hotkey), at most one secondary (chrome),
+    // the rest plain and dim with a hotkey, and a dismiss. `plain` wins over `variant`, so the first two never take it.
     if (p.phase === 'offer') {
       return (
         <Box flexDirection="column" rowGap="sm">
@@ -725,8 +725,8 @@ export const register: Register = (on, options) => {
               <Text dimColor> · Hand off to a fresh chat before auto-compact</Text>
             </Text>
             <Box flexDirection="row" gap={1} flexShrink={0}>
-              <Button key="refresh" label="Refresh" variant="primary" onPress={noop} />
-              <Button plain dimColor role="dismiss" key="close" label="Later" onPress={noop} />
+              <Button key="refresh" label="Refresh chat" variant="primary" hotkey="r" autoFocus onPress={noop} />
+              <Button plain dimColor role="dismiss" key="close" hotkey="l" label="Later" onPress={noop} />
             </Box>
           </Box>
         </Box>
@@ -760,11 +760,11 @@ export const register: Register = (on, options) => {
               </Box>
             </Box>
             <Box flexDirection="row" gap={1} paddingLeft={2}>
-              <Button key="copy" label="Copy" variant="primary" onPress={noop} />
-              <Button plain key="start" label="New chat" onPress={noop} />
-              <Button plain key="preview" label="Preview" onPress={noop} />
-              <Button plain dimColor key="open" label="Open file" onPress={noop} />
-              <Button plain dimColor role="dismiss" key="close" label="Close" onPress={noop} />
+              <Button key="copy" label="Copy handoff" variant="primary" hotkey="c" autoFocus onPress={noop} />
+              <Button key="start" label="New chat" variant="secondary" hotkey="n" onPress={noop} />
+              <Button plain dimColor key="preview" hotkey="p" label="Preview" onPress={noop} />
+              <Button plain dimColor key="open" hotkey="o" label="Open file" onPress={noop} />
+              <Button plain dimColor role="dismiss" key="close" hotkey="x" label="Close" onPress={noop} />
             </Box>
           </Box>
         </Box>
@@ -835,11 +835,11 @@ export const register: Register = (on, options) => {
               ) : null}
               {p.note ? <Text dimColor>{p.note}</Text> : null}
               <Box flexDirection="row" gap={1}>
-                <Button key="retry" label="Try again" variant="primary" onPress={noop} />
-                {p.file ? <Button plain key="copy" label="Copy draft" onPress={noop} /> : null}
-                {p.file ? <Button plain key="preview" label="Preview draft" onPress={noop} /> : null}
-                {p.file ? <Button plain dimColor key="open" label="Open draft" onPress={noop} /> : null}
-                <Button plain dimColor role="dismiss" key="close" label="Close" onPress={noop} />
+                <Button key="retry" label="Try again" variant="primary" hotkey="t" autoFocus onPress={noop} />
+                {p.file ? <Button key="copy" label="Copy draft" variant="secondary" hotkey="c" onPress={noop} /> : null}
+                {p.file ? <Button plain dimColor key="preview" hotkey="p" label="Preview draft" onPress={noop} /> : null}
+                {p.file ? <Button plain dimColor key="open" hotkey="o" label="Open draft" onPress={noop} /> : null}
+                <Button plain dimColor role="dismiss" key="close" hotkey="x" label="Close" onPress={noop} />
               </Box>
             </Box>
           ) : null}
@@ -859,10 +859,10 @@ export const register: Register = (on, options) => {
             {tilde(handoffPath)}
           </Text>
           <Box flexDirection="row" gap={1} flexShrink={0}>
-            <Button key="copy" label="Copy" variant="primary" onPress={noop} />
-            <Button plain key="start" label="New chat" onPress={noop} />
-            <Button plain dimColor key="open" label="Open file" onPress={noop} />
-            <Button plain dimColor role="dismiss" key="pclose" label="Close" onPress={noop} />
+            <Button key="copy" label="Copy handoff" variant="primary" hotkey="c" autoFocus onPress={noop} />
+            <Button key="start" label="New chat" variant="secondary" hotkey="n" onPress={noop} />
+            <Button plain dimColor key="open" hotkey="o" label="Open file" onPress={noop} />
+            <Button plain dimColor role="dismiss" key="pclose" hotkey="x" label="Close" onPress={noop} />
           </Box>
         </Box>
         {handoffText ? <Markdown key="handoff" text={handoffText} /> : <Text dimColor>No handoff yet.</Text>}
