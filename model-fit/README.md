@@ -1,6 +1,6 @@
 # model-fit
 
-**Version:** 0.10.0
+**Version:** 0.11.0
 
 A Claude Code mod (function hooks, Claude Code 2.1.287+) that checks whether the chat's model and effort fit the task in front of it. When they do not, a band above the prompt offers a Switch button. An Auto toggle lets the mod switch by itself.
 
@@ -54,6 +54,7 @@ The band holds the same controls: Switch (named for its target, `s`) on the left
 
 ## Version History
 
+- **0.11.0**: the band has the same padding as cache-timer and chat-handoff (two columns each side, a little above and below), collapsed too.
 - **0.10.0**: every button has the same design as cache-timer's Keep warm: a secondary button with its key badge.
 - **0.9.0**: the band matches cache-timer and chat-handoff on desktop: quiet controls carry key badges (Collapse `c`, Trigger `t`, Auto `a`, Dismiss `x`), the settings sit on the right, Auto on says what it does instead of a dim Switch, and the pair reads `opus | medium` in both views.
 - **0.8.0**: one button hierarchy: `Switch to <model · effort>` is the primary (`s`, focused), the dismiss reads `Dismiss` (`x`) and is the close control on desktop; collapsed, the band shows the model and effort as `opus | medium`.

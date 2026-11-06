@@ -100,8 +100,8 @@ const BAR_SHORT = 10
 const COLS_WIDE = 96
 const COLS_DETAIL = 84
 const COLS_BAR = 56
-// The band's rounded frame: a border and one column of padding on each side.
-const FRAME_COLS = 4
+// The band's rounded frame: a border and two columns of padding on each side.
+const FRAME_COLS = 6
 
 // Module variables start over on a reload; the clock itself lives in the atoms.
 let ttlMs = FIVE_MIN
@@ -561,10 +561,10 @@ export const register: Register = on => {
     const els = $.ui.resolve(e)
     const { Box, Text, Button } = els
     const left = c.lastEnd + c.ttlMs - c.now
-    // A surface with no column count gets the wide layout. The frame (border and padding) takes 4 columns.
+    // A surface with no column count gets the wide layout. The frame (border and padding) takes 6 columns.
     const cols: number = (e.props.bodyColumns ?? COLS_WIDE + FRAME_COLS) - FRAME_COLS
     // Every state sits in a rounded frame, as model-fit's band does, its border the colour of the state.
-    const frame = { borderStyle: 'round', paddingX: 1, paddingY: 'xs' } as const
+    const frame = { borderStyle: 'round', paddingX: 2, paddingY: 'xs' } as const
 
     if (hidden && w) {
       return (

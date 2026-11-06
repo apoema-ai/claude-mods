@@ -528,7 +528,7 @@ export const register: Register = (on, options) => {
       return (
         <Box flexDirection="column" rowGap="sm">
           {rest as never}
-          <Box key="fit-band" flexDirection="row" alignItems="center" justifyContent="space-between" borderStyle="round" borderColor={isPaused ? AMBER : accent} paddingX={1}>
+          <Box key="fit-band" flexDirection="row" alignItems="center" justifyContent="space-between" borderStyle="round" borderColor={isPaused ? AMBER : accent} paddingX={2} paddingY="xs">
             <Box key="fit-line" flexDirection="row" alignItems="center" gap={1}>
               <Text color={accent} bold>
                 ◆ Model Fit
@@ -584,7 +584,7 @@ export const register: Register = (on, options) => {
     return (
       <Box flexDirection="column" rowGap="sm">
         {rest as never}
-        <Box key="fit-band" flexDirection="column" rowGap="xs" borderStyle="round" borderColor={isPaused ? AMBER : accent} paddingX={1} paddingY="xs">
+        <Box key="fit-band" flexDirection="column" rowGap="xs" borderStyle="round" borderColor={isPaused ? AMBER : accent} paddingX={2} paddingY="xs">
           <Box key="fit-head" flexDirection="row" alignItems="center" justifyContent="space-between">
             <Box key="fit-title" flexDirection="row" gap={1}>
               <Text color={accent} bold>

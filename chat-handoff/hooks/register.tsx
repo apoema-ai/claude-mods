@@ -712,7 +712,7 @@ export const register: Register = (on, options) => {
     const Svg = e.surface !== 'terminal' && 'Svg' in els ? els.Svg : null
     const noop = () => undefined
     // Every state sits in a rounded frame, as model-fit's band does, its border the colour of the state.
-    const frame = { borderStyle: 'round', paddingX: 1, paddingY: 'xs' } as const
+    const frame = { borderStyle: 'round', paddingX: 2, paddingY: 'xs' } as const
 
     // Every button has one design, cache-timer's Keep warm: a secondary with a letter, which the desktop draws as a key
     // badge. The main action of each state comes first and takes the focus.
