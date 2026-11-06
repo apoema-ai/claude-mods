@@ -576,8 +576,8 @@ export const register: Register = on => {
       )
     }
 
-    // One hierarchy in every state: keep warm spends tokens, so it is a secondary, never the primary; Hide closes the band.
-    const hideButton = <Button plain dimColor role="dismiss" key="hide" hotkey="h" label="Hide" onPress={() => hide($)} />
+    // Every button has one design, this one's: a secondary with a letter, which the desktop draws as a key badge.
+    const hideButton = <Button variant="secondary" key="hide" hotkey="h" label="Hide" onPress={() => hide($)} />
     const warmButton = <Button variant="secondary" key="keepwarm" hotkey="w" label={w ? 'Stop keeping warm' : 'Keep warm'} onPress={() => toggleWarm($)} />
     const warmRow = w ? <Text color={w.cold || w.error ? BAD : COLD}>{warmLine(w, left, c.now)}</Text> : null
     const showDetail = cols >= COLS_DETAIL
@@ -680,8 +680,8 @@ export const register: Register = on => {
     const coldButton = w ? (
       warmButton
     ) : isArmed ? (
-      // The second press is the safeguard, so the confirm is the primary but never takes the focus by itself.
-      <Button key="rewarm" hotkey="w" variant="primary" label={`Confirm: write ${short(c.tokens)} tokens`} onPress={() => rewarm($)} />
+      // The second press is the safeguard, so the confirm never takes the focus by itself.
+      <Button variant="secondary" key="rewarm" hotkey="w" label={`Confirm: write ${short(c.tokens)} tokens`} onPress={() => rewarm($)} />
     ) : (
       <Button variant="secondary" key="rewarm" hotkey="w" label="Rewarm now" onPress={() => rewarm($)} />
     )

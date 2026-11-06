@@ -521,8 +521,8 @@ export const register: Register = (on, options) => {
       </Box>
     ) : null
     const autoState = auto ? (isPaused ? 'paused' : 'on') : 'off'
-    // Quiet controls are plain with a letter: the desktop draws the letter as a key badge, as the sibling bands' Later and Hide.
-    const collapseButton = <Button key="fit-collapse" label={collapsed ? 'Expand' : 'Collapse'} hotkey="c" plain dimColor onPress={() => undefined} />
+    // Every button has one design, cache-timer's Keep warm: a secondary with a letter, which the desktop draws as a key badge.
+    const collapseButton = <Button variant="secondary" key="fit-collapse" label={collapsed ? 'Expand' : 'Collapse'} hotkey="c" onPress={() => undefined} />
     if (collapsed) {
       // One line: the title, the pair (or the move), and the one button that acts. Reason, warning, Trigger and Auto wait behind Expand.
       return (
@@ -553,7 +553,7 @@ export const register: Register = (on, options) => {
                   Queued
                 </Text>
               ) : o && !autoActs ? (
-                <Button key="fit-switch" label="Switch" variant="primary" hotkey="s" onPress={() => undefined} />
+                <Button variant="secondary" key="fit-switch" label="Switch" hotkey="s" onPress={() => undefined} />
               ) : null}
               {auto ? (
                 <Text key="fit-tag" color={isPaused ? AMBER : undefined} dimColor={!isPaused}>
@@ -566,7 +566,7 @@ export const register: Register = (on, options) => {
         </Box>
       )
     }
-    // Left of the last row: what acts now (the one primary, Queued, or what Auto is doing). Right: the two settings.
+    // Left of the last row: what acts now (Switch, Queued, or what Auto is doing). Right: the two settings.
     const lead = o?.queued ? (
       <Text key="fit-queued" dimColor>
         Queued: switches when the agent finishes
@@ -576,8 +576,8 @@ export const register: Register = (on, options) => {
         {`Auto switches to ${label(o.to.model, toEffort)}`}
       </Text>
     ) : o ? (
-      // One primary per card, named for what it does; Enter presses it once the band has the focus.
-      <Button key="fit-switch" label={`Switch to ${label(o.to.model, toEffort)}`} variant="primary" hotkey="s" autoFocus onPress={() => undefined} />
+      // Named for what it does; Enter presses it once the band has the focus.
+      <Button variant="secondary" key="fit-switch" label={`Switch to ${label(o.to.model, toEffort)}`} hotkey="s" autoFocus onPress={() => undefined} />
     ) : (
       <Box key="fit-lead" />
     )
@@ -594,7 +594,7 @@ export const register: Register = (on, options) => {
             </Box>
             <Box key="fit-head-buttons" flexDirection="row" alignItems="center" gap={2}>
               {collapseButton}
-              {auto ? null : <Button key="fit-dismiss" label="Dismiss" role="dismiss" hotkey="x" plain dimColor onPress={() => undefined} />}
+              {auto ? null : <Button variant="secondary" key="fit-dismiss" label="Dismiss" hotkey="x" onPress={() => undefined} />}
             </Box>
           </Box>
           {o ? (
@@ -618,8 +618,8 @@ export const register: Register = (on, options) => {
           <Box key="fit-actions" flexDirection="row" alignItems="center" justifyContent="space-between" gap={2}>
             {lead}
             <Box key="fit-settings" flexDirection="row" alignItems="center" gap={2}>
-              <Button key="fit-trigger" label={`Trigger · ${trigger}`} hotkey="t" plain dimColor onPress={() => undefined} />
-              <Button key="fit-auto" label={`Auto · ${autoState}`} hotkey="a" plain dimColor onPress={() => undefined} />
+              <Button variant="secondary" key="fit-trigger" label={`Trigger · ${trigger}`} hotkey="t" onPress={() => undefined} />
+              <Button variant="secondary" key="fit-auto" label={`Auto · ${autoState}`} hotkey="a" onPress={() => undefined} />
             </Box>
           </Box>
           {isPaused ? (
