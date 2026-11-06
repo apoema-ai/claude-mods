@@ -489,7 +489,7 @@ export const register: Register = (on, options) => {
     if (!o && !auto) return next(e)
     const { value: trigger = DEFAULTS.trigger } = await $.state.get(TRIG)
     const { value: isPaused = false } = await $.state.get(PAUSED)
-    // Auto makes the switch itself. Button has no disabled state, so Switch is drawn as dim text.
+    // Auto makes the switch itself, so there is no Switch to press: the card says what Auto does instead.
     const autoActs = auto && !isPaused
     const now = o ? undefined : await setting($)
     const drawn = await Promise.resolve(next(e)).catch(() => null)
@@ -501,34 +501,42 @@ export const register: Register = (on, options) => {
     // The cache warning helps decide a press; Auto has already decided.
     const warn = o && !autoActs ? cacheNote(o.from, o.to, o.tokens) : null
     const { value: collapsed = false } = await $.state.get(COLLAPSED)
-    if (collapsed) {
-      // One line: the title, the move (or the setting), and the one button that acts. Reason, warning, Trigger and Auto wait behind the toggle.
-      const tag = auto ? (isPaused ? 'Auto: paused' : 'Auto: on') : null
-      // `opus | medium`: the model and the effort side by side. The effort is learnt from the chat's first request, so it is a dash until then;
-      // a Recommendation that keeps the effort shows the one in use on both sides.
-      const pair = (k: string, model: string, effort: string, color?: string, dim = false, strike = false) => (
-        <Text key={k} dimColor={dim} strikethrough={strike}>
-          <Text bold={!dim} color={color}>
-            {aliasOf(model) ?? (model || '—')}
-          </Text>
-          <Text dimColor> | </Text>
-          <Text color={color}>{effort || '—'}</Text>
+    // `opus | medium`: the model and the effort side by side, the same in both views. The effort is learnt from the chat's
+    // first request, so it is a dash until then; a Recommendation that keeps the effort shows the one in use on both sides.
+    const pair = (k: string, model: string, effort: string, color?: string, dim = false, strike = false) => (
+      <Text key={k} dimColor={dim} strikethrough={strike}>
+        <Text bold={!dim} color={color}>
+          {aliasOf(model) ?? (model || '—')}
         </Text>
-      )
+        <Text dimColor> | </Text>
+        <Text color={color}>{effort || '—'}</Text>
+      </Text>
+    )
+    const toEffort = o ? (o.to.keepEffort ? o.from.effort : o.to.effort) : ''
+    const move = o ? (
+      <Box key="fit-move" flexDirection="row" gap={1}>
+        {pair('fit-from', o.from.model, o.from.effort, undefined, true, true)}
+        <Text dimColor>→</Text>
+        {pair('fit-to', o.to.model, toEffort, accent)}
+      </Box>
+    ) : null
+    const autoState = auto ? (isPaused ? 'paused' : 'on') : 'off'
+    // Quiet controls are plain with a letter: the desktop draws the letter as a key badge, as the sibling bands' Later and Hide.
+    const collapseButton = <Button key="fit-collapse" label={collapsed ? 'Expand' : 'Collapse'} hotkey="c" plain dimColor onPress={() => undefined} />
+    if (collapsed) {
+      // One line: the title, the pair (or the move), and the one button that acts. Reason, warning, Trigger and Auto wait behind Expand.
       return (
         <Box flexDirection="column" rowGap="sm">
           {rest as never}
-          <Box key="fit-band" flexDirection="row" justifyContent="space-between" borderStyle="round" borderColor={isPaused ? AMBER : accent} paddingX={1}>
-            <Box key="fit-line" flexDirection="row" gap={1}>
+          <Box key="fit-band" flexDirection="row" alignItems="center" justifyContent="space-between" borderStyle="round" borderColor={isPaused ? AMBER : accent} paddingX={1}>
+            <Box key="fit-line" flexDirection="row" alignItems="center" gap={1}>
               <Text color={accent} bold>
                 ◆ Model Fit
               </Text>
               {o ? (
-                <Box key="fit-move" flexDirection="row" gap={1}>
+                <Box key="fit-arrow" flexDirection="row" gap={1}>
                   <Text color={accent}>{up ? '▲' : '▼'}</Text>
-                  {pair('fit-from', o.from.model, o.from.effort, undefined, true, true)}
-                  <Text dimColor>→</Text>
-                  {pair('fit-to', o.to.model, o.to.keepEffort ? o.from.effort : o.to.effort, accent)}
+                  {move}
                 </Box>
               ) : (
                 pair('fit-now', now?.model ?? '', now?.effort ?? '')
@@ -539,7 +547,7 @@ export const register: Register = (on, options) => {
                 </Text>
               ) : null}
             </Box>
-            <Box key="fit-actions" flexDirection="row" gap={2}>
+            <Box key="fit-actions" flexDirection="row" alignItems="center" gap={2}>
               {o?.queued ? (
                 <Text key="fit-queued" dimColor>
                   Queued
@@ -547,47 +555,55 @@ export const register: Register = (on, options) => {
               ) : o && !autoActs ? (
                 <Button key="fit-switch" label="Switch" variant="primary" hotkey="s" onPress={() => undefined} />
               ) : null}
-              {tag ? (
+              {auto ? (
                 <Text key="fit-tag" color={isPaused ? AMBER : undefined} dimColor={!isPaused}>
-                  {tag}
+                  {`Auto · ${autoState}`}
                 </Text>
               ) : null}
-              <Button key="fit-collapse" label="▸" plain dimColor onPress={() => undefined} />
+              {collapseButton}
             </Box>
           </Box>
         </Box>
       )
     }
+    // Left of the last row: what acts now (the one primary, Queued, or what Auto is doing). Right: the two settings.
+    const lead = o?.queued ? (
+      <Text key="fit-queued" dimColor>
+        Queued: switches when the agent finishes
+      </Text>
+    ) : autoActs && o ? (
+      <Text key="fit-auto-note" color={accent}>
+        {`Auto switches to ${label(o.to.model, toEffort)}`}
+      </Text>
+    ) : o ? (
+      // One primary per card, named for what it does; Enter presses it once the band has the focus.
+      <Button key="fit-switch" label={`Switch to ${label(o.to.model, toEffort)}`} variant="primary" hotkey="s" autoFocus onPress={() => undefined} />
+    ) : (
+      <Box key="fit-lead" />
+    )
     return (
       <Box flexDirection="column" rowGap="sm">
         {rest as never}
-        <Box key="fit-band" flexDirection="column" rowGap="xs" borderStyle="round" borderColor={accent} paddingX={1} paddingY="xs">
-          <Box key="fit-head" flexDirection="row" justifyContent="space-between">
+        <Box key="fit-band" flexDirection="column" rowGap="xs" borderStyle="round" borderColor={isPaused ? AMBER : accent} paddingX={1} paddingY="xs">
+          <Box key="fit-head" flexDirection="row" alignItems="center" justifyContent="space-between">
             <Box key="fit-title" flexDirection="row" gap={1}>
               <Text color={accent} bold>
                 ◆ Model Fit
               </Text>
               {o ? <Text color={accent}>{up ? '▲ stronger' : '▼ cheaper'}</Text> : null}
             </Box>
-            <Box key="fit-head-buttons" flexDirection="row" gap={1}>
-              <Button key="fit-collapse" label="▾" plain dimColor onPress={() => undefined} />
+            <Box key="fit-head-buttons" flexDirection="row" alignItems="center" gap={2}>
+              {collapseButton}
               {auto ? null : <Button key="fit-dismiss" label="Dismiss" role="dismiss" hotkey="x" plain dimColor onPress={() => undefined} />}
             </Box>
           </Box>
           {o ? (
-            <Box key="fit-move" flexDirection="row" gap={1}>
-              <Text dimColor strikethrough>
-                {label(o.from.model, o.from.effort)}
-              </Text>
-              <Text dimColor>→</Text>
-              <Text bold color={accent}>
-                {label(o.to.model, o.to.keepEffort ? '' : o.to.effort)}
-              </Text>
-            </Box>
+            move
           ) : (
-            <Text key="fit-now" dimColor>
-              {`Now: ${label(now?.model ?? '', now?.effort ?? '')}`}
-            </Text>
+            <Box key="fit-now-row" flexDirection="row" gap={1}>
+              <Text dimColor>Now</Text>
+              {pair('fit-now', now?.model ?? '', now?.effort ?? '')}
+            </Box>
           )}
           {o ? (
             <Text key="fit-why" dimColor italic wrap="wrap">
@@ -599,25 +615,16 @@ export const register: Register = (on, options) => {
               ⚠ {warn}
             </Text>
           ) : null}
-          <Box key="fit-actions" flexDirection="row" gap={2}>
-            {o?.queued ? (
-              <Text key="fit-queued" dimColor>
-                Queued: switches when the agent finishes
-              </Text>
-            ) : autoActs ? (
-              <Text key="fit-switch-off" dimColor>
-                Switch
-              </Text>
-            ) : o ? (
-              // One primary per card, named for what it does; Enter presses it once the band has the focus.
-              <Button key="fit-switch" label={`Switch to ${label(o.to.model, o.to.keepEffort ? '' : o.to.effort)}`} variant="primary" hotkey="s" autoFocus onPress={() => undefined} />
-            ) : null}
-            <Button key="fit-trigger" label={`Trigger: ${trigger}`} plain dimColor onPress={() => undefined} />
-            <Button key="fit-auto" label={`Auto: ${auto ? (isPaused ? 'paused' : 'on') : 'off'}`} plain dimColor onPress={() => undefined} />
+          <Box key="fit-actions" flexDirection="row" alignItems="center" justifyContent="space-between" gap={2}>
+            {lead}
+            <Box key="fit-settings" flexDirection="row" alignItems="center" gap={2}>
+              <Button key="fit-trigger" label={`Trigger · ${trigger}`} hotkey="t" plain dimColor onPress={() => undefined} />
+              <Button key="fit-auto" label={`Auto · ${autoState}`} hotkey="a" plain dimColor onPress={() => undefined} />
+            </Box>
           </Box>
           {isPaused ? (
             <Text key="fit-paused" color={AMBER} wrap="wrap">
-              Auto is paused because you changed the model or effort. Press Auto: paused, or run /model-fit auto on, to resume it.
+              Auto is paused because you changed the model or effort. Press Auto · paused, or run /model-fit auto on, to resume it.
             </Text>
           ) : null}
         </Box>

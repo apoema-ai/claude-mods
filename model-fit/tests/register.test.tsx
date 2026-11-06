@@ -100,7 +100,7 @@ test('an upgrade shows the band at once, with the reason', { timeoutMs: 30000 },
   await clock.settle()
   const says = await band($ as never)
   expect(says, 'the offer').toContain('sonnet')
-  expect(says).toContain('opus · high')
+  expect(says).toMatch(/opus\s*\|\s*high/)
   expect(says, 'the reason').toContain('design across several files')
   expect(says, 'a stronger pick is marked').toContain('▲ stronger')
 })
@@ -127,7 +127,7 @@ test('/model-fit off writes the shared switch and stops every look, on removes i
   await $.prompt.submit({ text: 'design the new module' } as never)
   await clock.settle()
   expect(judged, 'on again: judged').toHaveLength(1)
-  expect(await band($ as never)).toContain('opus · high')
+  expect(await band($ as never)).toMatch(/opus\s*\|\s*high/)
 })
 
 test('the reason wraps instead of being cut, and a cheaper pick is marked', { timeoutMs: 30000 }, async ($, on) => {
@@ -175,7 +175,7 @@ test('the cache guard keeps the model above the limit', { timeoutMs: 30000 }, as
   await $.prompt.submit({ text: 'rename another' } as never)
   await clock.settle()
   const says = await band($ as never)
-  expect(says, 'effort falls').toContain('opus · low')
+  expect(says, 'effort falls').toMatch(/opus\s*\|\s*low/)
   expect(says, 'model kept').toContain('model kept')
 })
 
@@ -202,7 +202,7 @@ test('Auto sends this turn on the recommendation, then runs /model after it', { 
   await $.turn.complete({ turnId: 't1', reason: 'answer', answer: 'done' } as never)
   await clock.settle()
   expect(ran[0], '/model follows the turn').toEqual({ command: 'model', args: 'opus' })
-  expect(await band($ as never), 'the band says what changed').toContain('opus · high')
+  expect(await band($ as never), 'the band says what changed').toMatch(/opus\s*\|\s*high/)
 })
 
 test('a Setting the person changed pauses Auto', { timeoutMs: 30000 }, async ($, on) => {
@@ -253,8 +253,8 @@ test('a skill in the table is mapped with no Judge call and effort untouched', {
   await clock.settle()
   expect(judged, 'no Judge call').toEqual([])
   const says = await band($ as never)
-  expect(says, 'sonnet is offered').toContain('→ sonnet')
-  expect(says, 'effort is not part of it').not.toContain('sonnet ·')
+  expect(says, 'sonnet is offered').toMatch(/→\s*sonnet/)
+  expect(says, 'effort is not part of it: the one in use, unknown here, shows on both sides').toMatch(/sonnet\s*\|\s*—/)
 })
 
 test('the Skill tool starts a look in the middle of a turn', { timeoutMs: 30000 }, async ($, on) => {
@@ -339,15 +339,16 @@ test('a Switch pressed while the agent works is queued, shows Queued, and runs w
 test('with Auto on the band stays up, shows what Auto did, and its Switch button cannot be pressed', { timeoutMs: 30000 }, async ($, on) => {
   const { clock } = rig(on, { model: sonnet, cfg: { auto: true }, replies: [say('opus', 'high', 'design across several files')] })
   await start($ as never)
-  expect(await band($ as never), 'up before any look, with the Setting').toContain('Now: sonnet')
+  expect(await band($ as never), 'up before any look, with the Setting').toMatch(/Now\s+sonnet/)
   await $.prompt.submit({ text: 'design the new module' } as never)
   await clock.settle()
   const says = await band($ as never)
-  expect(says, 'the switch Auto makes').toContain('opus · high')
+  expect(says, 'the switch Auto makes').toMatch(/opus\s*\|\s*high/)
+  expect(says, 'said as what Auto does').toContain('Auto switches to opus · high')
   expect(says, 'and why').toContain('design across several files')
   const v = await mountBand($ as never)
   expect(await v.find({ type: 'Button', key: 'fit-switch' }), 'Switch is not a button').toBeUndefined()
-  expect(await v.find({ type: 'Text', text: /^Switch$/ }), 'it is drawn dim').toBeDefined()
+  expect(await v.find({ type: 'Text', text: /^Switch$/ }), 'and no fake dim Switch either').toBeUndefined()
   expect(await v.find({ type: 'Button', key: 'fit-trigger' }), 'the trigger stays in reach').toBeDefined()
   expect(await v.find({ type: 'Button', key: 'fit-dismiss' }), 'no ✕ while Auto is on').toBeUndefined()
 })
@@ -384,7 +385,7 @@ test('a collapsed band with nothing on offer shows the Setting and the Auto stat
   expect(says, 'the Setting, with a dash before any request has said the effort').toMatch(/sonnet\s*\|\s*—/)
   for await (const _c of $.turn.step(stepOf(sonnet, 'medium'))) void _c
   expect(await band($ as never), 'the model and effort once a request has said it').toMatch(/sonnet\s*\|\s*medium/)
-  expect(says, 'the Auto state').toContain('Auto: on')
+  expect(says, 'the Auto state').toContain('Auto · on')
   expect(says, 'no expanded line').not.toContain('Now:')
 })
 
@@ -414,7 +415,7 @@ test('turning Auto off before its switch runs cancels it and leaves the recommen
   await clock.settle()
   expect(ran, "Auto's queued switch does not run").toEqual([])
   const v = await mountBand($ as never)
-  expect(await band($ as never), 'the recommendation stays').toContain('opus · high')
+  expect(await band($ as never), 'the recommendation stays').toMatch(/opus\s*\|\s*high/)
   expect(await v.find({ type: 'Button', key: 'fit-switch' }), 'with a Switch to press').toBeDefined()
 })
 
@@ -443,7 +444,7 @@ test('pressing Auto: paused resumes Auto instead of turning it off', { timeoutMs
   await $.prompt.submit({ text: 'rename a variable' } as never)
   await clock.settle()
   const v = await mountBand($ as never)
-  expect(await v.find({ type: 'Button', text: /Auto: paused/ }), 'paused first').toBeDefined()
+  expect(await v.find({ type: 'Button', text: /Auto · paused/ }), 'paused first').toBeDefined()
   await v.press({ key: 'fit-auto' })
   await clock.settle()
   expect(cfg.auto, 'Auto stays on').toBe(true)
