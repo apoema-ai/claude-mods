@@ -129,6 +129,7 @@ test('/chat-deck off writes the shared switch, clears the status and stops the p
   const run = async (args: string) => ($.command.run({ command: 'chat-deck', args } as never) as Promise<{ text: string }>)
 
   expect((await run('status')).text, 'on at the start').toBe('Chat Deck is on. Type /chat-deck off to turn it off.')
+  expect((await run('open')).text, 'open is no longer a verb: plain /chat-deck opens the pane').toMatch(/^Usage: \/chat-deck/)
   expect(String((await callTool({ tool: TOOL, tool_use_id: 'p1', title: 'Make the deck', steps: steps4(1, true) })).result), 'plan kept').toBe('Plan saved: 1 of 4 steps done.')
 
   expect((await run('off')).text).toMatch(/off in every chat/)

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.12.0
+
+- **`/chat-deck open` is gone.** Plain `/chat-deck` opens the pane. A word the command does not know now shows the usage instead of opening the pane. `status` stays, since plain `/chat-deck` opens the pane and does not say whether the mod is on.
+
 ## 0.11.0
 
 - **One command, `/chat-deck`.** It replaces `/chatdeck`, which is gone: `/chat-deck` opens the pane, and `close`, `reset` and `layout auto|compact|wide|mini` work as before, beside `on`, `off` and `status`.

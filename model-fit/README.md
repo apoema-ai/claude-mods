@@ -1,6 +1,6 @@
 # model-fit
 
-**Version:** 0.5.0
+**Version:** 0.6.0
 
 A Claude Code mod (function hooks, Claude Code 2.1.287+) that checks whether the chat's model and effort fit the task in front of it. When they do not, a band above the prompt offers a Switch button. An Auto toggle lets the mod switch by itself.
 
@@ -37,7 +37,7 @@ With Auto on, the prompt waits up to 3 seconds for the Judge, the current turn's
 
 | Command | Does |
 |---|---|
-| `/model-fit`, `/model-fit status` | Shows whether the mod is on, the setting, trigger, Auto and the last recommendation |
+| `/model-fit` | Shows whether the mod is on, the setting, trigger, Auto and the last recommendation |
 | `/model-fit on`, `off` | Turns the whole mod on or off in every chat. Off writes `"model-fit": false` to `~/.claude/mods/switches.json`; the mod reads it on each prompt, shows no band and makes no Judge call, whatever the trigger says. The trigger and Auto settings are kept. |
 | `/model-fit trigger off`, `trigger prompt`, `trigger skill` | Sets the trigger. `trigger off` stops the looks but keeps the mod on; `/model-fit off` switches the mod off |
 | `/model-fit auto on`, `auto off` | Sets Auto (on also ends a pause) |
@@ -54,5 +54,6 @@ The band holds the same controls: Switch, Trigger, Auto and a dismiss button. Th
 
 ## Version History
 
+- **0.6.0**: `/model-fit status` is gone; plain `/model-fit` shows the status.
 - **0.5.0**: the band collapses to one line with a `▾`/`▸` toggle; the choice is kept in `model-fit.json`.
 - **0.1.0**: first release.

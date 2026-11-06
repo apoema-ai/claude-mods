@@ -949,7 +949,7 @@ export const register: Register = (on, options) => {
     await $.command.register({
       name: 'chat-deck',
       description: 'Chat Deck, the live agent dashboard: open, close, reset, set the layout, or turn the mod on or off in every chat',
-      argumentHint: '[open|close|reset|layout auto|compact|wide|mini|on|off|status]',
+      argumentHint: '[close|reset|layout auto|compact|wide|mini|on|off|status]',
     })
     await migrate($)
     // A host without usage (headless, an SDK host, a session not yet bound) just starts without it.
@@ -996,8 +996,8 @@ export const register: Register = (on, options) => {
   })
 
   on('command.run', { command: 'chat-deck' }, async ($, e) => {
-    const [verb = 'open', arg = ''] = e.args.trim().toLowerCase().split(/\s+/).filter(Boolean)
-    // on and off switch the mod in every chat; status says which; the rest work only while it is on.
+    const [verb = '', arg = ''] = e.args.trim().toLowerCase().split(/\s+/).filter(Boolean)
+    // on and off switch the mod in every chat; status says which; the rest work only while it is on. Plain /chat-deck opens the pane.
     if (verb === 'status') return { text: `Chat Deck is ${isOff ? 'off' : 'on'}. Type /chat-deck ${isOff ? 'on' : 'off'} to turn it ${isOff ? 'on' : 'off'}.` }
     if (verb === 'on' || verb === 'off') {
       if (!(await writeSwitch($, verb === 'on'))) return { text: 'Chat Deck: could not write ~/.claude/mods/switches.json, so nothing changed.' }
@@ -1022,6 +1022,7 @@ export const register: Register = (on, options) => {
       const opened = await openPane($, cfg)
       return { text: opened.isPlaced ? `Chat Deck layout: ${layout}.` : `Layout set to ${layout}; the pane is not shown yet: ${opened.reason}` }
     }
+    if (verb) return { text: 'Usage: /chat-deck [close|reset|layout auto|compact|wide|mini|on|off|status]' }
     const opened = await openPane($, cfg)
     if (!opened.isPlaced) return { text: `Chat Deck is not shown yet: ${opened.reason}` }
     return { text: 'Chat Deck opened. Focus it with ctrl+x tab: number keys expand cards, f/s/o open the gate rows, b/n/l replay the comms message by message.' }

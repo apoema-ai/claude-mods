@@ -352,7 +352,7 @@ export const register: Register = (on, options) => {
     await $.command.register({
       name: 'model-fit',
       description: 'Model Fit: show the check, turn the mod on or off in every chat, or set the trigger (off|prompt|skill) and Auto (on|off)',
-      argumentHint: '[status|on|off|trigger off|trigger prompt|trigger skill|auto on|auto off]',
+      argumentHint: '[on|off|trigger off|trigger prompt|trigger skill|auto on|auto off]',
     })
     const cfg = await readCfg($)
     await syncState($, cfg)
@@ -445,7 +445,7 @@ export const register: Register = (on, options) => {
   // One command: on and off switch the mod in every chat; trigger and auto change its settings.
   on('command.run', { command: 'model-fit' }, async ($, e) => {
     const [verb = '', arg = ''] = (e.args ?? '').trim().toLowerCase().split(/\s+/).filter(Boolean)
-    if (!verb || verb === 'status') return { text: await statusText($) }
+    if (!verb) return { text: await statusText($) }
     if (verb === 'on' || verb === 'off') {
       if (!(await writeSwitch($, verb === 'on'))) return { text: 'Model Fit: could not write ~/.claude/mods/switches.json; see ~/.claude/mods-logs/model-fit.log.' }
       const cfg = await readCfg($)
@@ -465,7 +465,7 @@ export const register: Register = (on, options) => {
       return { text: `Model Fit: Auto ${arg}.` }
     }
     const trigger = verb === 'trigger' ? TRIGGER_WORDS[arg] : undefined
-    if (!trigger) return { text: 'Usage: /model-fit [status|on|off|trigger off|prompt|skill|auto on|off]' }
+    if (!trigger) return { text: 'Usage: /model-fit [on|off|trigger off|prompt|skill|auto on|off]' }
     if (!(await setCfg($, 'trigger', trigger))) return { text: 'Model Fit: could not change the trigger; see ~/.claude/mods-logs/model-fit.log.' }
     await syncState($, await readCfg($))
     return { text: `Model Fit: trigger ${trigger}.` }

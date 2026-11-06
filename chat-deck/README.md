@@ -1,6 +1,6 @@
 # chat-deck
 
-**Version:** 0.11.0
+**Version:** 0.12.0
 
 A Claude Code mod (function hooks, Claude Code 2.1.287+) that keeps a live pane of the whole chat beside the transcript: the main model's vitals, every permission check, subagent cards, and the messages the main chat and its subagents send each other. Every number and line comes from a real session event, and nothing leaves your machine.
 
@@ -103,6 +103,7 @@ It reads session events, and sends nothing of its own. It makes no tool calls. I
 
 ## Version History
 
+- **0.12.0** (2026-11-06): `/chat-deck open` is gone; plain `/chat-deck` opens the pane, and an unknown word shows the usage instead of opening it.
 - **0.11.0** (2026-11-06): one command, `/chat-deck`, replaces `/chatdeck`, which is gone.
 - **0.10.0** (2026-11-06): `/chat-deck on|off|status` turns the mod on or off in every chat; hooks that fail pass the event through.
 - **0.9.0** (2026-11-06): config cut from 13 options to 5; a collapsible panels row turns each panel on or off from inside the pane.

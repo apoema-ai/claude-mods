@@ -110,7 +110,7 @@ test('/model-fit off writes the shared switch and stops every look, on removes i
   const switches = '/Users/test/.claude/mods/switches.json'
   files[switches] = '{ "other": false }'
   await start($ as never)
-  expect(((await $.command.run({ command: 'model-fit', args: 'status' } as never)) as { text: string }).text).toContain('Model Fit is on. Type /model-fit off to turn it off.')
+  expect(((await $.command.run({ command: 'model-fit', args: '' } as never)) as { text: string }).text).toContain('Model Fit is on. Type /model-fit off to turn it off.')
 
   const off = (await $.command.run({ command: 'model-fit', args: 'off' } as never)) as { text: string }
   expect(off.text).toMatch(/off in every chat/)
@@ -277,7 +277,7 @@ test('/model-fit sets the trigger and Auto, and shows the status', { timeoutMs: 
   const status = (await run({ command: 'model-fit' })).text
   expect(status).toContain('Trigger: skill')
   expect(status).toContain('Auto: on')
-  expect((await run({ command: 'model-fit', args: 'status' })).text, 'status is the same').toBe(status)
+  expect((await run({ command: 'model-fit', args: 'status' })).text, 'status is no longer a verb: plain /model-fit shows it').toContain('Usage')
   expect((await run({ command: 'model-fit', args: 'nonsense' })).text).toContain('Usage')
   expect((await run({ command: 'model-fit', args: 'skill' })).text, 'a bare trigger word is not a trigger').toContain('Usage')
   expect((await run({ command: 'model-fit', args: 'trigger off' })).text).toContain('trigger off')
