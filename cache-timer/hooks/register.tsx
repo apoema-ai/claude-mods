@@ -360,7 +360,7 @@ const NOTHING_YET = "Nothing to keep warm yet. It works after Claude's first rep
 async function toggleWarm($: EngineInterface) {
   if (await read($, warm)) return stopWarm($, 'Keep warm is off.')
   const r = await startWarm($)
-  say($, r === 'started' ? 'Keep warm is on. Type /cache-timer warm off to stop it.' : r === 'cold' ? 'The cache just went cold. Use Rewarm now to write it again.' : NOTHING_YET)
+  say($, r === 'started' ? 'Keep warm is on. Type /cache-timer warm again to stop it.' : r === 'cold' ? 'The cache just went cold. Use Rewarm now to write it again.' : NOTHING_YET)
 }
 
 // The cold band's button: the first press arms it, a second press within ARM_MS rewarms.
@@ -377,7 +377,7 @@ async function rewarm($: EngineInterface) {
 
 async function hide($: EngineInterface) {
   await update($, isHidden, () => true)
-  say($, (await read($, warm)) ? 'Cache Timer hidden. Keep warm is still on, so its one-line chip stays. Type /cache-timer show to show the timer.' : 'Cache Timer hidden. Type /cache-timer show to show it again.')
+  say($, (await read($, warm)) ? 'Cache Timer hidden. Keep warm is still on, so its one-line chip stays. Type /cache-timer on to show the timer.' : 'Cache Timer hidden. Type /cache-timer on to show it again.')
 }
 
 // Once a second: sends the ping when the cache is LEAD from going cold, and keeps the caps.
@@ -447,33 +447,30 @@ function warmLine(w: Warm, left: number, now: number): string {
   return parts.join(' · ')
 }
 
-// /cache-timer warm [off|now]: with no word it starts keep warm, or stops it when it runs.
-async function warmCommand($: EngineInterface, arg: string) {
-  const running = (await read($, warm)) !== null
-  if (arg === 'off' || (arg !== 'on' && arg !== 'now' && running)) {
+// /cache-timer warm: starts keep warm, or stops it when it runs. A cold cache is not rewarmed from here, since that
+// writes the whole chat again: the cold band's Rewarm now button does it, with a confirming second press.
+async function warmCommand($: EngineInterface) {
+  if ((await read($, warm)) !== null) {
     await update($, warm, () => null)
     return { text: 'Keep warm is off. Type /cache-timer warm to start it again.' }
   }
-  if (running) return { text: 'Keep warm is already on. Type /cache-timer warm off to stop it.' }
-  const r = await startWarm($, arg === 'now')
+  const r = await startWarm($, false)
   if (r === 'none') return { text: NOTHING_YET }
   if (r === 'cold') {
     const c = await read($, clock)
     return {
-      text: `The cache is already cold, so the first ping would write all ${short(c?.tokens ?? 0)} tokens to it again, at the cache-write price. Type /cache-timer warm now to do that anyway, or just send your next message.`,
+      text: `The cache is already cold, so the first ping would write all ${short(c?.tokens ?? 0)} tokens to it again, at the cache-write price. Press Rewarm now on the band to do that anyway, or just send your next message.`,
     }
   }
-  const limits = 'It stops after 2 hours, 30 pings, or when you send a message. Type /cache-timer warm off to stop it.'
-  if (arg === 'now') return { text: `Rewarming now: the first ping writes the chat to the cache again, then keep warm pings about 45 s before it would go cold. ${limits}` }
-  return { text: `Keep warm is on: one small background ping about 45 s before the cache goes cold, so the chat is read from the cache instead of written again. ${limits}` }
+  return { text: 'Keep warm is on: one small background ping about 45 s before the cache goes cold, so the chat is read from the cache instead of written again. It stops after 2 hours, 30 pings, or when you send a message. Type /cache-timer warm again to stop it.' }
 }
 
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     await $.command.register({
       name: 'cache-timer',
-      description: 'Cache Timer: "warm" keeps the cache warm with a small ping 45 s before it goes cold ("warm off" stops it, "warm now" rewarms a cold cache); "hide" or "show" the band in this chat; "on" or "off" switches the mod in every chat',
-      argumentHint: '[warm|warm off|warm now|hide|show|on|off|status]',
+      description: 'Cache Timer: "on" or "off" switches the mod in every chat; "warm" starts or stops keep warm, a small ping 45 s before the cache goes cold; no word says whether each is on',
+      argumentHint: '[on|off|warm]',
       immediate: true,
     })
     $.clock.every(1000, () => {
@@ -532,21 +529,22 @@ export const register: Register = on => {
   }).catch(async ($, e, next) => next(e)) // only watches: if it fails, the message still goes through
 
   on('command.run', { command: 'cache-timer' }, async ($, e) => {
-    const [verb = '', rest = ''] = e.args.trim().toLowerCase().split(/\s+/).filter(Boolean)
-    if (verb === 'warm') return warmCommand($, rest)
-    const arg = e.args.trim().toLowerCase()
-    // hide and show are this chat's band only; on and off switch the mod in every chat.
-    if (arg === 'hide' || arg === 'show') {
-      const hideIt = arg === 'hide'
-      await update($, isHidden, () => hideIt)
-      if (!hideIt) return { text: 'Cache Timer is shown. Type /cache-timer hide to hide it.' }
-      if (await read($, warm)) return { text: 'Cache Timer hidden. Keep warm is still on, so its one-line chip stays until it stops. Type /cache-timer show to show the timer.' }
-      return { text: 'Cache Timer hidden. Type /cache-timer show to show it.' }
+    // Three actions: on/off switch the mod in every chat, warm toggles keep warm, and no word says where both stand.
+    const arg = e.args.trim().toLowerCase().split(/\s+/).filter(Boolean).join(' ')
+    if (arg === 'warm') return warmCommand($)
+    if (arg === 'on' || arg === 'off') {
+      if (!(await writeSwitch($, arg === 'on'))) return { text: 'Cache Timer: could not write ~/.claude/mods/switches.json, so nothing changed.' }
+      await pollSwitches($)
+      if (arg === 'off') return { text: 'Cache Timer is off in every chat. Type /cache-timer on to turn it on again.' }
+      // On also brings back a band hidden in this chat with its Hide button.
+      await update($, isHidden, () => false)
+      return { text: 'Cache Timer is on.' }
     }
-    if (arg !== 'on' && arg !== 'off') return { text: `Cache Timer is ${switchOff ? 'off' : 'on'}. Type /cache-timer ${switchOff ? 'on' : 'off'} to turn it ${switchOff ? 'on' : 'off'}.` }
-    if (!(await writeSwitch($, arg === 'on'))) return { text: 'Cache Timer: could not write ~/.claude/mods/switches.json, so nothing changed.' }
-    await pollSwitches($)
-    return { text: arg === 'on' ? 'Cache Timer is on.' : 'Cache Timer is off in every chat. Type /cache-timer on to turn it on again.' }
+    const keepWarm = (await read($, warm)) !== null
+    const state = switchOff
+      ? 'Cache Timer is off. Type /cache-timer on to turn it on.'
+      : `Cache Timer is on. Keep warm is ${keepWarm ? 'on' : 'off'}. Type /cache-timer warm to ${keepWarm ? 'stop' : 'start'} it, or /cache-timer off to turn the mod off.`
+    return { text: arg ? `${state} Usage: /cache-timer [on|off|warm]` : state }
   })
 
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {

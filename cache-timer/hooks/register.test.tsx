@@ -180,7 +180,7 @@ test('/cache-timer warm says so when there is no reply to keep warm yet', async 
   expect(answer.text).toMatch(/Nothing to keep warm yet/)
 })
 
-test('a message from the person stops keep warm; /cache-timer warm off stops it too', async ($, on) => {
+test('a message from the person stops keep warm; /cache-timer warm again stops it too', async ($, on) => {
   const { clock, seen } = engine(on, 'unknown')
   await replied($, clock)
 
@@ -190,8 +190,10 @@ test('a message from the person stops keep warm; /cache-timer warm off stops it 
   expect(seen.toasts).toContain('Keep warm stopped: you sent a message.')
 
   await $.command.run({ command: 'cache-timer', args: 'warm' } as never)
-  const off = await $.command.run({ command: 'cache-timer', args: 'warm off' } as never)
+  const off = await $.command.run({ command: 'cache-timer', args: 'warm' } as never)
   expect(off.text).toMatch(/Keep warm is off/)
+  const gone = (await $.command.run({ command: 'cache-timer', args: 'warm off' } as never)) as { text: string }
+  expect(gone.text, 'warm off is not a command any more').toMatch(/Usage/)
   await clock.advance(5 * 60_000)
   expect(seen.forks).toBe(0)
 })
@@ -248,8 +250,8 @@ test('/cache-timer off writes the shared switch and stops the band and keep warm
   }
   expect(await bandShown()).toBe(true)
 
-  const status = (await $.command.run({ command: 'cache-timer', args: 'status' } as never)) as { text: string }
-  expect(status.text).toMatch(/is on/)
+  const status = (await $.command.run({ command: 'cache-timer', args: '' } as never)) as { text: string }
+  expect(status.text, 'the status names the mod and keep warm').toBe('Cache Timer is on. Keep warm is on. Type /cache-timer warm to stop it, or /cache-timer off to turn the mod off.')
 
   const off = (await $.command.run({ command: 'cache-timer', args: 'off' } as never)) as { text: string }
   expect(off.text).toMatch(/off in every chat/)
@@ -263,16 +265,18 @@ test('/cache-timer off writes the shared switch and stops the band and keep warm
   expect(await bandShown()).toBe(true)
 })
 
-test('/cache-timer hide takes the band away and /cache-timer show brings it back', async ($, on) => {
+test('the Hide button takes the band away and /cache-timer on brings it back', async ($, on) => {
   const { clock } = engine(on, 'unknown')
   await replied($, clock)
 
-  await $.command.run({ command: 'cache-timer', args: 'hide' } as never)
+  const band = await $.ui.mount(BAND('terminal'))
+  await band.press({ key: 'hide' })
+  await band.unmount()
   const hidden = await $.ui.mount(BAND('terminal'))
   expect(await hidden.find({ type: 'Text', text: /Cache warm/ })).toBeUndefined()
   await hidden.unmount()
 
-  await $.command.run({ command: 'cache-timer', args: 'show' } as never)
+  await $.command.run({ command: 'cache-timer', args: 'on' } as never)
   const shown = await $.ui.mount(BAND('terminal'))
   expect(await shown.find({ type: 'Text', text: /Cache warm/ })).toBeDefined()
   await shown.unmount()
@@ -283,8 +287,10 @@ test('hiding the band while keep warm runs leaves a chip, and its Stop button st
   await replied($, clock)
   await $.command.run({ command: 'cache-timer', args: 'warm' } as never)
 
-  const hidden = await $.command.run({ command: 'cache-timer', args: 'hide' } as never)
-  expect(hidden.text).toMatch(/Keep warm is still on/)
+  const band = await $.ui.mount(BAND('terminal'))
+  await band.press({ key: 'hide' })
+  await band.unmount()
+  expect(seen.toasts.some(t => /Keep warm is still on/.test(t))).toBe(true)
   for (const surface of ['terminal', 'desktop'] as const) {
     const ui = await $.ui.mount(BAND(surface))
     expect(await ui.find({ type: 'Text', text: /Cache warm/ })).toBeUndefined()
@@ -317,7 +323,7 @@ test('the shared hide switch also keeps the keep warm chip', async ($, on) => {
   await ui.unmount()
 })
 
-test('on a cold cache /cache-timer warm explains the write and only /cache-timer warm now rewarms', async ($, on) => {
+test('on a cold cache /cache-timer warm explains the write and points at the Rewarm button', async ($, on) => {
   const { clock, seen } = engine(on, 'unknown')
   await replied($, clock)
   await clock.advance(6 * 60_000)
@@ -325,13 +331,9 @@ test('on a cold cache /cache-timer warm explains the write and only /cache-timer
   const refused = await $.command.run({ command: 'cache-timer', args: 'warm' } as never)
   expect(refused.text).toMatch(/already cold/)
   expect(refused.text).toMatch(/84k tokens/)
+  expect(refused.text).toMatch(/Press Rewarm now on the band/)
   await clock.advance(5000)
   expect(seen.forks, 'no ping without the explicit rewarm').toBe(0)
-
-  const forced = await $.command.run({ command: 'cache-timer', args: 'warm now' } as never)
-  expect(forced.text).toMatch(/Rewarming now/)
-  await clock.advance(2000)
-  expect(seen.forks).toBe(1)
 })
 
 test('the cold band rewarms only on a second press, and the first press wears off', async ($, on) => {
@@ -579,7 +581,7 @@ test('a compaction of the main chat resets the band, a subagent compaction does 
   expect(await says($, /writes the shorter conversation to it again/)).toBe(true)
 })
 
-test('a reset stops keep warm, and a rewarm after it is explicit', async ($, on) => {
+test('a reset stops keep warm, and /cache-timer warm will not rewrite a reset cache', async ($, on) => {
   const { clock, seen } = engine(on, 'unknown')
   await replied($, clock)
   await $.command.run({ command: 'cache-timer', args: 'warm' } as never)
@@ -599,12 +601,7 @@ test('a reset stops keep warm, and a rewarm after it is explicit', async ($, on)
   expect(refused.text).toMatch(/already cold/)
   await clock.advance(5000)
   expect(seen.forks).toBe(0)
-
-  const forced = await $.command.run({ command: 'cache-timer', args: 'warm now' } as never)
-  expect(forced.text).toMatch(/Rewarming now/)
-  await clock.advance(2000)
-  expect(seen.forks, 'the rewarm pings at once').toBe(1)
-  expect(await says($, /Cache reset/), 'and clears the reset line').toBe(false)
+  expect(await says($, /Cache reset/), 'the reset line stays until the next reply').toBe(true)
 })
 
 test('the Hide button says how to bring the band back', async ($, on) => {
@@ -614,7 +611,7 @@ test('the Hide button says how to bring the band back', async ($, on) => {
   const ui = await $.ui.mount(BAND('terminal'))
   await ui.press({ key: 'hide' })
   await ui.unmount()
-  expect(seen.toasts).toContain('Cache Timer hidden. Type /cache-timer show to show it again.')
+  expect(seen.toasts).toContain('Cache Timer hidden. Type /cache-timer on to show it again.')
 })
 
 test('a background turn does not stop keep warm', async ($, on) => {

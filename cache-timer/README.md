@@ -17,16 +17,24 @@ Tested with Claude Code 2.1.318 (mods API, early access).
 - Cold: `❄ Cache cold · went cold 7 min ago`, with how many tokens your next message writes to the cache again. Button: `Rewarm now`, which asks for a second press (`Confirm: write 84k tokens`) within 8 s, because a rewarm writes the whole chat to the cache at the write price.
 - Reset: `↻ Cache reset by switching to opus-5-5 · your next message writes 150k tokens to it again`. Each model has its own cache and a compaction replaces the history, so after a model switch (while the cache was still warm), a `/compact` or an auto-compaction the countdown would promise a discount the next request does not get. The band says so instead, stops keep warm (a ping on the old schedule would write the whole chat unasked), and goes back to the countdown when the next main-chat reply completes. A model restored on resume, a switch after the cache had already lapsed, and a subagent's own compaction change nothing. `/cache-timer warm` on a reset cache explains the write like on a cold one, and `/cache-timer warm now` rewarms it at once. The cache TTL rules this follows are on [How Claude Code uses prompt caching](https://code.claude.com/docs/en/prompt-caching#which-ttl-each-request-gets).
 - Reset, after the fact: the warning above needs the `classic.PostModelSwitch` and `classic.PostCompact` hook events, and a plugin earlier in the hook chain can keep those from reaching this mod (seen with `cc-plugin-sec-default`: Claude Code reports the hook as skipped). So after every main-chat reply the mod also reads the transcript: if the turn's first request was sent while the band said warm, yet wrote more to the cache than it read (at least 10k tokens, and under half of what was cached), a bottom line, under the countdown and the keep-warm line, says `↻ The cache had been reset (a model switch, a compaction or similar), so that reply wrote 104k tokens to it again` until the next reply. This only reports the write once it has happened; it cannot warn before it. A transcript over 20 MB is not read, so a very long chat gets no such line.
-- Keep warm (`/cache-timer warm`, or the button): one tiny background ping about 45 s before the cache goes cold. Its line shows the ping count out of 30, what the last ping read, the total read so far, and when it stops by itself. It stops after 2 hours, 30 successful pings, 3 failed pings in a row, or when you send a message. Failed pings retry after 20 s and do not count toward the 30. `/cache-timer warm off` stops it.
-- On a cold cache `/cache-timer warm` explains the write cost and does nothing; `/cache-timer warm now` rewarms anyway.
-- `/cache-timer hide` and `/cache-timer show` hide and show the band in this chat. Hiding never hides keep warm: while it runs, a one-line chip (`◷ Keeping cache warm · ping 3/30 · next in 3:15`) with a Stop button stays.
+- Keep warm (`/cache-timer warm`, or the button): one tiny background ping about 45 s before the cache goes cold. Its line shows the ping count out of 30, what the last ping read, the total read so far, and when it stops by itself. It stops after 2 hours, 30 successful pings, 3 failed pings in a row, or when you send a message. Failed pings retry after 20 s and do not count toward the 30. `/cache-timer warm` again stops it.
+- On a cold cache `/cache-timer warm` explains the write cost and does nothing; the band's Rewarm now button rewarms anyway, after a second press.
+- The band's Hide button hides it in this chat; `/cache-timer on` brings it back. Hiding never hides keep warm: while it runs, a one-line chip (`◷ Keeping cache warm · ping 3/30 · next in 3:15`) with a Stop button stays.
 - The keep-warm and cold lines follow your theme (`error`, `suggestion` theme colours), and the band fits its width: under 96 columns the bar shortens, under 84 the details go, under 56 the bar goes.
 
 The cache length (5 min or 1 hour) is read by the mod itself, in TypeScript, from this chat's transcript (`~/.claude/projects/<project>/<session id>.jsonl`): the newest main-thread reply that wrote to the cache says which. Until a reply has set it, the band assumes 5 min. A transcript over 20 MB is not read, so a very long chat keeps the 5 min guess. There is no compiled helper, so it runs the same on macOS, Linux and Windows.
 
 ## Switchboard
 
-`/cache-timer off` turns this mod off in every chat and `/cache-timer on` turns it back on; `/cache-timer status` says which. It writes `"cache-timer": false` to `~/.claude/mods/switches.json` (on removes the key) and reads that file every 3 seconds, so an open chat follows. Off stops keep warm too. You can hide just the band by hand with `"cache-timer:hidden": true` (the keep warm chip still shows while keep warm runs); `/cache-timer hide` and `/cache-timer show` do the same for this chat only.
+The command has three actions:
+
+| Command | Does |
+|---|---|
+| `/cache-timer on`, `/cache-timer off` | Turns the mod on or off in every chat. On also shows a band you hid in this chat |
+| `/cache-timer` | Says whether the mod is on and whether keep warm is running |
+| `/cache-timer warm` | Starts keep warm, or stops it when it runs |
+
+`/cache-timer off` and `on` It writes `"cache-timer": false` to `~/.claude/mods/switches.json` (on removes the key) and reads that file every 3 seconds, so an open chat follows. Off stops keep warm too. You can hide just the band by hand with `"cache-timer:hidden": true` (the keep warm chip still shows while keep warm runs); the band's Hide button does the same for this chat only.
 
 ## Load it
 
