@@ -153,11 +153,11 @@ test('a chat first seen already over the size cap stays a 5 min guess', async ($
   await ui.unmount()
 })
 
-test('/keep-warm pings once, shortly before the cache goes cold', async ($, on) => {
+test('/cache-timer warm pings once, shortly before the cache goes cold', async ($, on) => {
   const { clock, seen } = engine(on, 'unknown')
   await replied($, clock)
 
-  const answer = await $.command.run({ command: 'keep-warm', args: '' } as never)
+  const answer = await $.command.run({ command: 'cache-timer', args: 'warm' } as never)
   expect(answer.text).toMatch(/Keep warm is on/)
 
   // Nothing happens at 3 min; the ping goes out 45 s before the 5 min cache lapses.
@@ -171,26 +171,26 @@ test('/keep-warm pings once, shortly before the cache goes cold', async ($, on) 
   await ui.unmount()
 })
 
-test('/keep-warm says so when there is no reply to keep warm yet', async ($, on) => {
+test('/cache-timer warm says so when there is no reply to keep warm yet', async ($, on) => {
   const { clock } = engine(on, 'unknown')
   await $.session.start({ surface: 'terminal', isInteractive: true, cwd: '/work' })
   await clock.settle()
 
-  const answer = await $.command.run({ command: 'keep-warm', args: '' } as never)
+  const answer = await $.command.run({ command: 'cache-timer', args: 'warm' } as never)
   expect(answer.text).toMatch(/Nothing to keep warm yet/)
 })
 
-test('a message from the person stops keep warm; /keep-warm off stops it too', async ($, on) => {
+test('a message from the person stops keep warm; /cache-timer warm off stops it too', async ($, on) => {
   const { clock, seen } = engine(on, 'unknown')
   await replied($, clock)
 
-  await $.command.run({ command: 'keep-warm', args: '' } as never)
+  await $.command.run({ command: 'cache-timer', args: 'warm' } as never)
   await $.prompt.submit({ wait: false, origin: { kind: 'composer' }, text: 'hello again' })
   await clock.settle()
   expect(seen.toasts).toContain('Keep warm stopped: you sent a message.')
 
-  await $.command.run({ command: 'keep-warm', args: '' } as never)
-  const off = await $.command.run({ command: 'keep-warm', args: 'off' } as never)
+  await $.command.run({ command: 'cache-timer', args: 'warm' } as never)
+  const off = await $.command.run({ command: 'cache-timer', args: 'warm off' } as never)
   expect(off.text).toMatch(/Keep warm is off/)
   await clock.advance(5 * 60_000)
   expect(seen.forks).toBe(0)
@@ -224,7 +224,7 @@ test('the shared switches turn the band off and hide it, and a change reaches an
 test('switching the mod off stops keep warm', async ($, on) => {
   const { clock, seen } = engine(on, 'unknown')
   await replied($, clock)
-  await $.command.run({ command: 'keep-warm', args: '' } as never)
+  await $.command.run({ command: 'cache-timer', args: 'warm' } as never)
 
   seen.switches = '{ "cache-timer": false }'
   await clock.advance(3000)
@@ -238,7 +238,7 @@ test('/cache-timer off writes the shared switch and stops the band and keep warm
   const { clock, seen } = engine(on, 'unknown')
   seen.switches = '{ "other": false }'
   await replied($, clock)
-  await $.command.run({ command: 'keep-warm', args: '' } as never)
+  await $.command.run({ command: 'cache-timer', args: 'warm' } as never)
 
   const bandShown = async () => {
     const ui = await $.ui.mount(BAND('terminal'))
@@ -281,7 +281,7 @@ test('/cache-timer hide takes the band away and /cache-timer show brings it back
 test('hiding the band while keep warm runs leaves a chip, and its Stop button stops keep warm', async ($, on) => {
   const { clock, seen } = engine(on, 'unknown')
   await replied($, clock)
-  await $.command.run({ command: 'keep-warm', args: '' } as never)
+  await $.command.run({ command: 'cache-timer', args: 'warm' } as never)
 
   const hidden = await $.command.run({ command: 'cache-timer', args: 'hide' } as never)
   expect(hidden.text).toMatch(/Keep warm is still on/)
@@ -307,7 +307,7 @@ test('hiding the band while keep warm runs leaves a chip, and its Stop button st
 test('the shared hide switch also keeps the keep warm chip', async ($, on) => {
   const { clock, seen } = engine(on, 'unknown')
   await replied($, clock)
-  await $.command.run({ command: 'keep-warm', args: '' } as never)
+  await $.command.run({ command: 'cache-timer', args: 'warm' } as never)
 
   seen.switches = '{ "cache-timer:hidden": true }'
   await clock.advance(3000)
@@ -317,18 +317,18 @@ test('the shared hide switch also keeps the keep warm chip', async ($, on) => {
   await ui.unmount()
 })
 
-test('on a cold cache /keep-warm explains the write and only /keep-warm now rewarms', async ($, on) => {
+test('on a cold cache /cache-timer warm explains the write and only /cache-timer warm now rewarms', async ($, on) => {
   const { clock, seen } = engine(on, 'unknown')
   await replied($, clock)
   await clock.advance(6 * 60_000)
 
-  const refused = await $.command.run({ command: 'keep-warm', args: '' } as never)
+  const refused = await $.command.run({ command: 'cache-timer', args: 'warm' } as never)
   expect(refused.text).toMatch(/already cold/)
   expect(refused.text).toMatch(/84k tokens/)
   await clock.advance(5000)
   expect(seen.forks, 'no ping without the explicit rewarm').toBe(0)
 
-  const forced = await $.command.run({ command: 'keep-warm', args: 'now' } as never)
+  const forced = await $.command.run({ command: 'cache-timer', args: 'warm now' } as never)
   expect(forced.text).toMatch(/Rewarming now/)
   await clock.advance(2000)
   expect(seen.forks).toBe(1)
@@ -370,7 +370,7 @@ test('failed pings retry, do not count as pings, and three in a row stop keep wa
   const { clock, seen } = engine(on, 'unknown')
   seen.fail = true
   await replied($, clock)
-  await $.command.run({ command: 'keep-warm', args: '' } as never)
+  await $.command.run({ command: 'cache-timer', args: 'warm' } as never)
 
   await clock.advance(260_000)
   expect(seen.forks, 'first ping, 45 s before the 5 min cache lapses').toBe(1)
@@ -582,7 +582,7 @@ test('a compaction of the main chat resets the band, a subagent compaction does 
 test('a reset stops keep warm, and a rewarm after it is explicit', async ($, on) => {
   const { clock, seen } = engine(on, 'unknown')
   await replied($, clock)
-  await $.command.run({ command: 'keep-warm', args: '' } as never)
+  await $.command.run({ command: 'cache-timer', args: 'warm' } as never)
 
   await $.classic.PostModelSwitch(SWITCH())
   await clock.settle()
@@ -595,12 +595,12 @@ test('a reset stops keep warm, and a rewarm after it is explicit', async ($, on)
   await clock.settle()
   await $.classic.PostModelSwitch(SWITCH())
   await clock.settle()
-  const refused = await $.command.run({ command: 'keep-warm', args: '' } as never)
+  const refused = await $.command.run({ command: 'cache-timer', args: 'warm' } as never)
   expect(refused.text).toMatch(/already cold/)
   await clock.advance(5000)
   expect(seen.forks).toBe(0)
 
-  const forced = await $.command.run({ command: 'keep-warm', args: 'now' } as never)
+  const forced = await $.command.run({ command: 'cache-timer', args: 'warm now' } as never)
   expect(forced.text).toMatch(/Rewarming now/)
   await clock.advance(2000)
   expect(seen.forks, 'the rewarm pings at once').toBe(1)
@@ -620,7 +620,7 @@ test('the Hide button says how to bring the band back', async ($, on) => {
 test('a background turn does not stop keep warm', async ($, on) => {
   const { clock, seen } = engine(on, 'unknown')
   await replied($, clock)
-  await $.command.run({ command: 'keep-warm', args: '' } as never)
+  await $.command.run({ command: 'cache-timer', args: 'warm' } as never)
 
   await $.prompt.submit({ wait: false, origin: { kind: 'task-notification' }, text: 'a task finished' } as never)
   await clock.settle()
