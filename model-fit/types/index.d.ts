@@ -6,7 +6,7 @@ declare module 'claude-code' {
   interface PluginState {
     'model-fit': {
       /** The Mismatch the band offers; null when nothing differs. */
-      offer: { from: FitSetting; to: FitRec; shown: boolean; queued?: 'switch' | 'go'; tokens?: number } | null
+      offer: { from: FitSetting; to: FitRec; shown: boolean; queued?: boolean; tokens?: number } | null
       /** The Trigger, Auto and Pause the band draws. */
       trigger: string
       auto: boolean

@@ -302,38 +302,16 @@ test('when /model answers but the model does not change, the requests carry it a
 const mountBand = ($: { ui: { mount: (i: never) => Promise<{ press: (k: { key: string }) => Promise<unknown>; find: (q: object) => Promise<unknown> }> } }, isWorking = false) =>
   $.ui.mount({ plugin: 'model-fit', surface: 'desktop', component: 'AbovePrompt', props: { isWorking, hasSurvey: false, maxRows: 20, bodyColumns: 80, scroll: {}, view: {} } } as never)
 
-test('Switch and go switches, then sends a continue note once, without a new look', { timeoutMs: 30000 }, async ($, on) => {
-  const { clock, ran, submitted, judged } = rig(on, { model: sonnet, replies: [say('opus', 'high')] })
+test('the card has one action, Switch, and it sends no prompt of its own', { timeoutMs: 30000 }, async ($, on) => {
+  const { clock, submitted } = rig(on, { model: sonnet, replies: [say('opus', 'high')] })
   await start($ as never)
   await $.prompt.submit({ text: 'design the new module' } as never)
   await clock.settle()
   const v = await mountBand($ as never)
-  await v.press({ key: 'fit-go' })
+  expect(await v.find({ type: 'Button', key: 'fit-go' }), 'no Switch and go').toBeUndefined()
+  await v.press({ key: 'fit-switch' })
   await clock.settle()
-  expect(ran[0], 'the switch ran first').toEqual({ command: 'model', args: 'opus' })
-  expect(submitted, 'the prompt went out twice in all').toHaveLength(2)
-  expect(submitted[1], 'the second is the continue note').toContain('Continue from your last reply')
-  expect(submitted[1], 'the original prompt is not sent again').not.toContain('design the new module')
-  expect(judged, 'the re-send is not judged again').toHaveLength(1)
-  expect(await band($ as never), 'the card goes away').not.toContain('Model Fit')
-})
-
-test('Switch and go pressed while the agent works is queued with its own label, then continues',{ timeoutMs: 30000 }, async ($, on) => {
-  const { clock, ran, submitted } = rig(on, { model: sonnet, replies: [say('opus', 'high')] })
-  await start($ as never)
-  await $.prompt.submit({ text: 'design the new module' } as never)
-  await clock.settle()
-  await $.turn.start({ turnId: 't1' } as never)
-  const v = await mountBand($ as never, true)
-  await v.press({ key: 'fit-go' })
-  await clock.settle()
-  expect(ran, 'nothing runs while the agent works').toEqual([])
-  expect(submitted, 'nothing is sent yet').toHaveLength(1)
-  expect(await (await mountBand($ as never, true)).find({ text: /continues from the last reply/ }), 'the label says it will continue').toBeDefined()
-  await $.turn.complete({ turnId: 't1', reason: 'answer', answer: 'done' } as never)
-  await clock.settle()
-  expect(ran[0]).toEqual({ command: 'model', args: 'opus' })
-  expect(submitted, 'now the continue note is sent').toHaveLength(2)
+  expect(submitted, 'only the person prompt went out').toHaveLength(1)
 })
 
 test('a Switch pressed while the agent works is queued, shows Queued, and runs when the turn ends', { timeoutMs: 30000 }, async ($, on) => {
@@ -356,7 +334,7 @@ test('a Switch pressed while the agent works is queued, shows Queued, and runs w
   expect(await band($ as never), 'the band goes away').not.toContain('Model Fit')
 })
 
-test('with Auto on the band stays up, shows what Auto did, and its Switch buttons cannot be pressed', { timeoutMs: 30000 }, async ($, on) => {
+test('with Auto on the band stays up, shows what Auto did, and its Switch button cannot be pressed', { timeoutMs: 30000 }, async ($, on) => {
   const { clock } = rig(on, { model: sonnet, cfg: { auto: true }, replies: [say('opus', 'high', 'design across several files')] })
   await start($ as never)
   expect(await band($ as never), 'up before any look, with the Setting').toContain('Now: sonnet')
@@ -367,8 +345,7 @@ test('with Auto on the band stays up, shows what Auto did, and its Switch button
   expect(says, 'and why').toContain('design across several files')
   const v = await mountBand($ as never)
   expect(await v.find({ type: 'Button', key: 'fit-switch' }), 'Switch is not a button').toBeUndefined()
-  expect(await v.find({ type: 'Button', key: 'fit-go' }), 'nor Switch and go').toBeUndefined()
-  expect(await v.find({ type: 'Text', text: /^Switch and go$/ }), 'both are drawn dim').toBeDefined()
+  expect(await v.find({ type: 'Text', text: /^Switch$/ }), 'it is drawn dim').toBeDefined()
   expect(await v.find({ type: 'Button', key: 'fit-trigger' }), 'the trigger stays in reach').toBeDefined()
   expect(await v.find({ type: 'Button', key: 'fit-dismiss' }), 'no ✕ while Auto is on').toBeUndefined()
 })
@@ -388,7 +365,6 @@ test('the band collapses to one line that keeps the move and Switch, and the tog
   expect(says, 'the reason is folded away').not.toContain('design across several files')
   const c = await mountBand($ as never)
   expect(await c.find({ type: 'Button', key: 'fit-trigger' }), 'Trigger is folded away').toBeUndefined()
-  expect(await c.find({ type: 'Button', key: 'fit-go' }), 'so is Switch and go').toBeUndefined()
   await c.press({ key: 'fit-collapse' })
   expect(cfg.collapsed, 'the toggle expands it').toBe(false)
   expect(await band($ as never), 'the reason is back').toContain('design across several files')

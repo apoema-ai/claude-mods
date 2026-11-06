@@ -56,11 +56,7 @@ let hold: { model: Alias; effort: string } | undefined
 let queued: Rec | undefined
 // A main-chat turn is running, so a pressed Switch waits for it; the press is kept here.
 let working = false
-let pressed: { rec: Rec; go: boolean } | undefined
-// The person's last prompt, never one of the mod's own continue notes. "Switch and go" needs one to exist.
-let lastPrompt = ''
-// The next submission is the mod's own continue note: no look, and it is not the last prompt.
-let resending = false
+let pressed: Rec | undefined
 // The context size at the last look, for the cache warning on the card.
 let ctxTokens: number | undefined
 // A newer prompt makes an older Judge answer stale.
@@ -166,9 +162,9 @@ async function syncState($: EngineInterface, cfg: Cfg) {
   await $.state.set(COLLAPSED, cfg.collapsed)
 }
 
-async function drawOffer($: EngineInterface, from: Setting | null, to: Rec | null, cfg?: Cfg, queuedBy?: 'switch' | 'go') {
-  if (!queuedBy) pressed = undefined
-  await $.state.set(OFFER, from && to ? { from, to, shown: true, ...(queuedBy ? { queued: queuedBy } : {}), ...(ctxTokens !== undefined ? { tokens: ctxTokens } : {}) } : null)
+async function drawOffer($: EngineInterface, from: Setting | null, to: Rec | null, cfg?: Cfg, isQueued = false) {
+  if (!isQueued) pressed = undefined
+  await $.state.set(OFFER, from && to ? { from, to, shown: true, ...(isQueued ? { queued: true } : {}),...(ctxTokens !== undefined ? { tokens: ctxTokens } : {}) } : null)
   if (cfg) await syncState($, cfg)
 }
 
@@ -265,21 +261,6 @@ async function runSwitch($: EngineInterface, rec: Rec) {
   await drawOffer($, null, null)
   // A refused /model and a slow one look the same here, so the toast says pending, not failed.
   say($, ok ? `Model Fit: now ${target}.` : `Model Fit: ${target} is pending. The model has not changed yet, so the requests are sent on ${target} until it does.`)
-}
-
-/** Switch and go: switch, then send a short note so the agent continues from its last reply on the new model. */
-async function runGo($: EngineInterface, rec: Rec) {
-  await runSwitch($, rec)
-  if (!lastPrompt) {
-    say($, 'Model Fit: switched, but there is no earlier reply to continue from.')
-    return
-  }
-  resending = true
-  const note = `[Model Fit] The model is now ${label(rec.model, rec.keepEffort ? '' : rec.effort)}. Continue from your last reply; do not repeat it.`
-  await $.prompt.submit({ text: note }).catch(async err => {
-    resending = false
-    await log($, `continue note: ${String(err)}`)
-  })
 }
 
 /** One look at the new work. Never changes the Setting unless Auto is on and not paused. */
@@ -385,10 +366,10 @@ export const register: Register = (on, options) => {
     const r = await next(e)
     if (!e.agentId) working = false
     if (!e.agentId && pressed) {
-      const { rec, go } = pressed
+      const rec = pressed
       pressed = undefined
       $.clock.after(0, () => {
-        void (go ? runGo($, rec) : runSwitch($, rec)).catch(err => log($, `queued press: ${String(err)}`))
+        void runSwitch($, rec).catch(err => log($, `queued press: ${String(err)}`))
       })
     } else if (!e.agentId && queued) {
       const rec = queued
@@ -402,10 +383,6 @@ export const register: Register = (on, options) => {
 
   on('prompt.submit', async ($, e, next) => {
     if (e.isMeta) return next(e)
-    if (resending) {
-      resending = false
-      return next(e)
-    }
     const cfg = await readCfg($)
     await checkDrift($, await setting($))
     if (cfg.trigger === 'off') {
@@ -421,11 +398,7 @@ export const register: Register = (on, options) => {
       if (name === 'model-fit' || !info || info.source === 'builtin') return next(e)
       skill = name
       subject = `/${name} ${e.command.args}`
-      lastPrompt = e.text
-    } else {
-      lastPrompt = e.text
-      if (cfg.trigger === 'skill') return next(e)
-    }
+    } else if (cfg.trigger === 'skill') return next(e)
     const run = look($, cfg, subject, skill).catch(err => log($, `look: ${String(err)}`))
     // Auto holds the prompt a moment so the turn can start on the Recommendation; otherwise nothing waits.
     if (cfg.auto && !paused) await Promise.race([run, $.clock.sleep(WAIT_MS)])
@@ -471,19 +444,17 @@ export const register: Register = (on, options) => {
     return { text: `Model Fit: trigger ${trigger}.` }
   })
 
-  for (const [element, go] of [['fit-switch', false], ['fit-go', true]] as const) {
-    on('ui.press', { plugin: NAME, element }, async ($, e) => {
-      const { value: offer = null } = await $.state.get(OFFER)
-      if (!offer) await log($, `${element} pressed with no offer in state`)
-      else if (offer.queued) return { element: e.element }
-      else if (working) {
-        // The agent is busy: keep the press, show Queued, and switch when the turn ends.
-        pressed = { rec: offer.to, go }
-        await drawOffer($, offer.from, offer.to, undefined, go ? 'go' : 'switch')
-      } else await (go ? runGo($, offer.to) : runSwitch($, offer.to)).catch(err => log($, `${element} press: ${String(err)}`))
-      return { element: e.element }
-    })
-  }
+  on('ui.press', { plugin: NAME, element: 'fit-switch' }, async ($, e) => {
+    const { value: offer = null } = await $.state.get(OFFER)
+    if (!offer) await log($, 'fit-switch pressed with no offer in state')
+    else if (offer.queued) return { element: e.element }
+    else if (working) {
+      // The agent is busy: keep the press, show Queued, and switch when the turn ends.
+      pressed = offer.to
+      await drawOffer($, offer.from, offer.to, undefined, true)
+    } else await runSwitch($, offer.to).catch(err => log($, `fit-switch press: ${String(err)}`))
+    return { element: e.element }
+  })
   on('ui.press', { plugin: NAME, element: 'fit-dismiss' }, async ($, e) => {
     await drawOffer($, null, null)
     return { element: e.element }
@@ -518,7 +489,7 @@ export const register: Register = (on, options) => {
     if (!o && !auto) return next(e)
     const { value: trigger = DEFAULTS.trigger } = await $.state.get(TRIG)
     const { value: isPaused = false } = await $.state.get(PAUSED)
-    // Auto makes the switch itself. Button has no disabled state, so its two are drawn as dim text.
+    // Auto makes the switch itself. Button has no disabled state, so Switch is drawn as dim text.
     const autoActs = auto && !isPaused
     const now = o ? undefined : await setting($)
     const drawn = await Promise.resolve(next(e)).catch(() => null)
@@ -626,22 +597,14 @@ export const register: Register = (on, options) => {
           <Box key="fit-actions" flexDirection="row" gap={2}>
             {o?.queued ? (
               <Text key="fit-queued" dimColor>
-                {o.queued === 'go' ? 'Queued: switches and continues from the last reply when the agent finishes' : 'Queued: switches when the agent finishes'}
+                Queued: switches when the agent finishes
               </Text>
             ) : autoActs ? (
-              <Box key="fit-buttons-off" flexDirection="row" gap={2}>
-                <Text key="fit-switch-off" dimColor>
-                  Switch
-                </Text>
-                <Text key="fit-go-off" dimColor>
-                  Switch and go
-                </Text>
-              </Box>
+              <Text key="fit-switch-off" dimColor>
+                Switch
+              </Text>
             ) : o ? (
-              <Box key="fit-buttons" flexDirection="row" gap={2}>
-                <Button key="fit-switch" label="Switch" onPress={() => undefined} />
-                <Button key="fit-go" label="Switch and go" onPress={() => undefined} />
-              </Box>
+              <Button key="fit-switch" label="Switch" onPress={() => undefined} />
             ) : null}
             <Button key="fit-trigger" label={`Trigger: ${trigger}`} plain dimColor onPress={() => undefined} />
             <Button key="fit-auto" label={`Auto: ${auto ? (isPaused ? 'paused' : 'on') : 'off'}`} plain dimColor onPress={() => undefined} />
