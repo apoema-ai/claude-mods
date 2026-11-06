@@ -19,6 +19,7 @@ Tested with Claude Code 2.1.314 (mods API, early access).
 - A plain draft is saved before the model step, so a failed model call still leaves something. The full handoff replaces the draft.
 - Anything shaped like a key or token is removed before saving or copying: `sk-`, `ghp_`, `github_pat_`, Slack, Google, AWS (`AKIA`/`ASIA`) keys, JWTs and `Bearer` tokens.
 - When it is ready, the steps collapse into one line (words, messages, files, time) with **Copy handoff** (`c`, focused), **New chat** (`n`), **Preview** (`p`), **Open file** (`o`) and **Close** (`x`).
+- The band sits in a rounded border, as model-fit's does: orange for the offer and while it builds, green when ready, red when it fails.
   - **Copy handoff** uses the surface's clipboard, and falls back to `pbcopy` when that reports nothing was copied.
   - **Preview** opens a pane with the handoff drawn as markdown, with the same actions.
   - Confirmations (copied, new chat started) show as toasts.

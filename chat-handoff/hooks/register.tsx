@@ -711,6 +711,8 @@ export const register: Register = (on, options) => {
     // The desktop draws the bars as SVG; the terminal as gradient blocks.
     const Svg = e.surface !== 'terminal' && 'Svg' in els ? els.Svg : null
     const noop = () => undefined
+    // Every state sits in a rounded frame, as model-fit's band does, its border the colour of the state.
+    const frame = { borderStyle: 'round', paddingX: 1, paddingY: 'xs' } as const
 
     // Every button has one design, cache-timer's Keep warm: a secondary with a letter, which the desktop draws as a key
     // badge. The main action of each state comes first and takes the focus.
@@ -718,7 +720,7 @@ export const register: Register = (on, options) => {
       return (
         <Box flexDirection="column" rowGap="sm">
           {rest}
-          <Box flexDirection="row" alignItems="center" justifyContent="space-between" gap={1}>
+          <Box key="handoff-band" flexDirection="row" alignItems="center" justifyContent="space-between" gap={1} {...frame} borderColor={ACCENT}>
             <Text wrap="truncate-end">
               <Text color={ACCENT}>●</Text>
               <Text tabular> {short(p.tokens)} context</Text>
@@ -742,7 +744,7 @@ export const register: Register = (on, options) => {
         <Box flexDirection="column" rowGap="sm">
           {rest}
           {/* Step names add room on desktop only: down, xs and sm are 0 rows on the terminal. */}
-          <Box flexDirection="column" rowGap="sm" paddingBottom="xs">
+          <Box key="handoff-band" flexDirection="column" rowGap="sm" {...frame} borderColor={GOOD}>
             <Box flexDirection="column">
               <Box flexDirection="row" alignItems="center" gap={1}>
                 <Text color={GOOD}>✓</Text>
@@ -818,7 +820,7 @@ export const register: Register = (on, options) => {
     return (
       <Box flexDirection="column" rowGap="sm">
         {rest}
-        <Box flexDirection="column" rowGap="sm" paddingBottom="xs">
+        <Box key="handoff-band" flexDirection="column" rowGap="sm" {...frame} borderColor={failed ? BAD : ACCENT}>
           <Text size="heading" weight="semibold" color={failed ? BAD : ACCENT}>
             {failed ? 'The handoff did not finish' : 'Building your handoff'}
           </Text>

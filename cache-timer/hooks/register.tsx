@@ -100,6 +100,8 @@ const BAR_SHORT = 10
 const COLS_WIDE = 96
 const COLS_DETAIL = 84
 const COLS_BAR = 56
+// The band's rounded frame: a border and one column of padding on each side.
+const FRAME_COLS = 4
 
 // Module variables start over on a reload; the clock itself lives in the atoms.
 let ttlMs = FIVE_MIN
@@ -559,14 +561,16 @@ export const register: Register = on => {
     const els = $.ui.resolve(e)
     const { Box, Text, Button } = els
     const left = c.lastEnd + c.ttlMs - c.now
-    // A surface with no column count gets the wide layout.
-    const cols: number = e.props.bodyColumns ?? COLS_WIDE
+    // A surface with no column count gets the wide layout. The frame (border and padding) takes 4 columns.
+    const cols: number = (e.props.bodyColumns ?? COLS_WIDE + FRAME_COLS) - FRAME_COLS
+    // Every state sits in a rounded frame, as model-fit's band does, its border the colour of the state.
+    const frame = { borderStyle: 'round', paddingX: 1, paddingY: 'xs' } as const
 
     if (hidden && w) {
       return (
         <Box flexDirection="column">
           {rest}
-          <Box flexDirection="row" alignItems="center" justifyContent="space-between" gap={1}>
+          <Box key="cache-band" flexDirection="row" alignItems="center" justifyContent="space-between" gap={1} {...frame} borderColor={w.error || w.cold ? BAD : COLD}>
             <Text wrap="truncate-end" color={w.error || w.cold ? BAD : COLD}>
               {`◷ Keeping cache warm · ${pingStatus(w, left)}`}
             </Text>
@@ -597,7 +601,7 @@ export const register: Register = on => {
       return (
         <Box flexDirection="column" rowGap="sm">
           {rest}
-          <Box flexDirection="row" alignItems="center" justifyContent="space-between" gap={1}>
+          <Box key="cache-band" flexDirection="row" alignItems="center" justifyContent="space-between" gap={1} {...frame} borderColor={COLD}>
             <Text wrap="truncate-end">
               <Text color={COLD}>{`↻ Cache reset by ${reset.why}`}</Text>
               {showDetail ? <Text dimColor>{` · ${cost}`}</Text> : null}
@@ -648,6 +652,7 @@ export const register: Register = on => {
       return (
         <Box flexDirection="column" rowGap="sm">
           {rest}
+          <Box key="cache-band" flexDirection="column" rowGap="xs" {...frame} borderColor={color}>
           <Box flexDirection="row" alignItems="center" justifyContent="space-between" gap={1}>
             <Box flexDirection="row" alignItems="center" gap={1} flexShrink={1}>
               <Text>
@@ -670,6 +675,7 @@ export const register: Register = on => {
           </Box>
           {warmRow}
           {rewroteRow}
+          </Box>
         </Box>
       )
     }
@@ -695,15 +701,17 @@ export const register: Register = on => {
     return (
       <Box flexDirection="column" rowGap="sm">
         {rest}
-        <Box flexDirection="row" alignItems="center" justifyContent="space-between" gap={1}>
-          <Text wrap="truncate-end">{coldParts}</Text>
-          <Box flexDirection="row" gap={1}>
-            {coldButton}
-            {hideButton}
+        <Box key="cache-band" flexDirection="column" rowGap="xs" {...frame} borderColor={COLD}>
+          <Box flexDirection="row" alignItems="center" justifyContent="space-between" gap={1}>
+            <Text wrap="truncate-end">{coldParts}</Text>
+            <Box flexDirection="row" gap={1}>
+              {coldButton}
+              {hideButton}
+            </Box>
           </Box>
+          {warmRow}
+          {rewroteRow}
         </Box>
-        {warmRow}
-        {rewroteRow}
       </Box>
     )
   })
