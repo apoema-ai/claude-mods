@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.1
+
+- The app's `wrap_up` checks the plan off, so a plan mirrored from the app's task list no longer stays in progress forever; with the steps open, a title cut from a short prompt ("Yes") gives way to the step in progress; a failed call's reason is red on its first row only, dim after, at most two rows.
+
 ## 0.13.0
 
 - **Tighter pane.** the last turn and the files float to the shorter column with the gate and the architect, so the two columns end close together; the last request's speed shares the cost line; the last turn's counts sit in its header (errors get their own line only when there are some); comms messages take two lines each, top-aligned, with the route in a quiet colour and no replay hint; agent lanes give names up to half the row; the gate is titled `gate` and drops the check count its `all` filter already shows; with the steps open the plan header names the plan; the files header shows the edit count only when it differs from the file count.

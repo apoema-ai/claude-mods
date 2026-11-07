@@ -1,6 +1,6 @@
 # model-fit
 
-**Version:** 0.12.0
+**Version:** 0.12.1
 
 A Claude Code mod (function hooks, Claude Code 2.1.287+) that checks whether the chat's model and effort fit the task in front of it. When they do not, a band above the prompt offers a Switch button. An Auto toggle lets the mod switch by itself.
 
@@ -54,6 +54,7 @@ The band holds the same controls in three rows: the title, `▲ stronger` or `�
 
 ## Version History
 
+- **0.12.1**: The fold and `✕` show no key badge on desktop (`c`, `x` still work); the calm band has the framed band's vertical padding; before the effort is known, the idle band reads `Now opus` without `| —`.
 - **0.12.0**: a Recommendation fits in three rows (the move joins the title); Switch is the primary button; Collapse/Expand is a `▾`/`▸` fold and Dismiss is `✕` (`x`), as on every mod; Auto with nothing on offer is one line with no frame; the button rows wrap on a narrow band; the paused note is shorter.
 - **0.11.0**: the band has the same padding as cache-timer and chat-handoff (two columns each side, a little above and below), collapsed too.
 - **0.10.0**: every button has the same design as cache-timer's Keep warm: a secondary button with its key badge.

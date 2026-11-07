@@ -79,6 +79,7 @@ claude plugin test <path to chat-handoff>
 
 ## Version History
 
+- **0.9.1**: `✕` shows no key badge on desktop (`x` still works).
 - **0.9.0**: one primary button per state (Refresh chat, New chat, Try again); the ready band is one line, its file path and Open file in the Preview pane; Later and Close are `✕` (`x`); the button rows wrap on a narrow band; the step labels take only the room they need.
 - **0.8.0**: the band has the same padding as cache-timer and model-fit.
 - **0.7.0**: the band is framed in a rounded border: orange for the offer and while it builds, green when ready, red when it fails.

@@ -523,8 +523,8 @@ export const register: Register = (on, options) => {
     const autoState = auto ? (isPaused ? 'paused' : 'on') : 'off'
     // The mods share one button language: a letter on every button (a key badge on the desktop), one primary per state,
     // a setting drawn as `Label · state`, a fold as ▾/▸, and ✕ (x) on the far right to dismiss. Rows wrap on a narrow band.
-    const collapseButton = <Button variant="secondary" key="fit-collapse" label={collapsed ? '▸' : '▾'} hotkey="c" onPress={() => undefined} />
-    const dismissButton = auto ? null : <Button variant="secondary" key="fit-dismiss" role="dismiss" label="✕" hotkey="x" onPress={() => undefined} />
+    const collapseButton = <Button variant="secondary" key="fit-collapse" label={collapsed ? '▸' : '▾'} hotkey={e.surface === 'terminal' ? 'c' : undefined} onPress={() => undefined} />
+    const dismissButton = auto ? null : <Button variant="secondary" key="fit-dismiss" role="dismiss" label="✕" hotkey={e.surface === 'terminal' ? 'x' : undefined} onPress={() => undefined} />
     const settings = (
       <Box key="fit-settings" flexDirection="row" flexWrap="wrap" alignItems="center" gap={1}>
         <Button variant="secondary" key="fit-trigger" label={`Trigger · ${trigger}`} hotkey="t" onPress={() => undefined} />
@@ -533,7 +533,7 @@ export const register: Register = (on, options) => {
     )
     // Quiet when calm, framed when it needs you: a Recommendation, or a paused Auto, sits in a rounded frame in its colour;
     // Auto with nothing on offer is one line with no frame, which saves the frame's two rows.
-    const shell = o || isPaused ? { borderStyle: 'round', borderColor: isPaused ? AMBER : accent, paddingX: 2, paddingY: 'xs' } : { paddingX: 2 }
+    const shell = o || isPaused ? { borderStyle: 'round', borderColor: isPaused ? AMBER : accent, paddingX: 2, paddingY: 'xs' } : { paddingX: 2, paddingY: 'xs' }
     const title = (
       <Text key="fit-brand" color={accent} bold>
         ◆ Model Fit
@@ -598,7 +598,14 @@ export const register: Register = (on, options) => {
               <Box key="fit-now-row" flexDirection="row" alignItems="center" gap={1}>
                 {title}
                 <Text dimColor>Now</Text>
-                {pair('fit-now', now?.model ?? '', now?.effort ?? '')}
+                {/* Before the first request reports the effort, the model alone: no `| —`. */}
+                {now?.effort ? (
+                  pair('fit-now', now.model, now.effort)
+                ) : (
+                  <Text key="fit-now" bold>
+                    {aliasOf(now?.model ?? '') ?? (now?.model || '—')}
+                  </Text>
+                )}
               </Box>
               <Box key="fit-head-buttons" flexDirection="row" flexWrap="wrap" alignItems="center" gap={1}>
                 {settings}

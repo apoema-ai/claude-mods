@@ -394,6 +394,19 @@ test('the desktop app task list feeds the plan, and the plan tool then stands do
   expect(ctx.join(' '), 'the app list counts as a plan: no nudge').not.toContain('no plan')
 })
 
+test('wrap_up checks the app list off, so a plan never stays in progress', { timeoutMs: 30000 }, async ($, on) => {
+  const { clock } = rig(on, {})
+  await start($, 'terminal')
+  const callTool = $.tool.call as unknown as CallTool
+  const v = await $.ui.mount(pane('terminal'))
+  await callTool({ tool: 'mcp__ccd_turn__update_plan', tool_use_id: 'h', items: steps4(0, true).map(st => ({ content: st.text, status: st.status })) })
+  await clock.settle()
+  expect(await planSays(v, 'terminal')).toContain('Tasks 0/4')
+  await callTool({ tool: 'mcp__ccd_turn__wrap_up', tool_use_id: 'w', recap: 'done' })
+  await clock.settle()
+  expect(await planSays(v, 'terminal'), 'every step done').toContain('Tasks 4/4')
+})
+
 test('a failed step shows red, is counted, and can be retried', { timeoutMs: 30000 }, async ($, on) => {
   const files: Record<string, string> = {}
   const { clock, toasts } = rig(on, files)

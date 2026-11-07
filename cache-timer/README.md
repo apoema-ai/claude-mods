@@ -54,6 +54,7 @@ The Hand off button, the log file and the 60 s demo mode.
 
 ## Version History
 
+- **0.14.1**: `✕` shows no key badge on desktop (`x` still works); the calm band has the same vertical padding as the framed one.
 - **0.14.0**: quiet when calm: the warm band is one line with no frame, and keep warm's progress sits on that line. Keep warm is a `Keep warm · on/off` toggle (`w`, also in the hidden chip), Hide is `✕` (`x`), and the button rows wrap on a narrow band.
 - **0.13.0**: the band has the same padding as chat-handoff and model-fit (two columns each side, a little above and below).
 - **0.12.0**: the band is framed in a rounded border, like model-fit's.

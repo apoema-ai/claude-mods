@@ -116,6 +116,7 @@ import {
   ACT_ARGS,
   DONE_HOLD_MS,
   HOST_PLAN,
+  HOST_WRAP,
   MIRRORED,
   NUDGE_AFTER,
   NUDGE_CONT,
@@ -690,6 +691,12 @@ let planCfg: Config | null = null
   async function mirror($: EngineInterface, name: string, args: Record<string, unknown>, r: unknown) {
     const res = (r as { result?: unknown; isError?: boolean; deny?: string } | undefined) ?? {}
     if (res.deny || res.isError) return
+    // wrap_up checks the app's list off: every step still open is done (a failed one stays failed).
+    if (name === HOST_WRAP) {
+      if (!hostSeen || !plan || planDone) return
+      await applyPlan($, undefined, plan.steps.map(st => ({ text: st.text, status: st.status === 'failed' ? 'failed' : 'completed', ...(st.id ? { id: st.id } : {}) })))
+      return
+    }
     // The desktop app's task list: { items } is the whole list; advance, done (numbers from 1) and start change it.
     if (name === HOST_PLAN) {
       hostSeen = true
@@ -1542,7 +1549,7 @@ export const register: Register = (on, options) => {
     // Long text wraps to a few rows instead of ending in an ellipsis; the row budget counts the rows it takes.
     const WRAP_COMMS = 2
     const WRAP_LOG = 2
-    const WRAP_FAIL = 3
+    const WRAP_FAIL = 2
     const commsTextW = (w: number) => Math.max(1, w - 4 - (w < 40 ? 16 : 24))
     // Under 12 cells a row holds too little to wrap into: it keeps one row and an ellipsis.
     const rowsFor = (room: number, max: number) => (room < 12 ? 1 : max)
@@ -2273,7 +2280,8 @@ export const register: Register = (on, options) => {
       const isCountInHead = Svg !== null && widthOf(count) + 1 <= inner - 14
       const headRoom = Math.max(1, inner - 2 - (isCountInHead ? widthOf(count) + 1 : 0))
       // With the steps open the list marks the step in progress, so the header names the plan instead.
-      const stepText = curStep && !isOpen ? `▸ ${curStep.active ?? curStep.text}` : pl.title
+      // A title cut from a short prompt ("Yes") says nothing, so the step in progress keeps the header then.
+      const stepText = curStep && (!isOpen || pl.title.length < 12) ? `▸ ${curStep.active ?? curStep.text}` : pl.title
       const header = (
         <Box width={inner} columnGap={1} overflow="hidden">
           <Box flexShrink={0}>
@@ -2596,11 +2604,12 @@ export const register: Register = (on, options) => {
           const f = splitFailure(l.text)
           if (f) {
             return [
-              ...wrapLines(f.reason, textW, rowsFor(textW, 2)).map(text => ({ text, tone: 'warn' as const })),
+              // 0.13.1: only the reason's first row is red; the rest reads dim, so a long failure is no wall of red.
+              ...wrapLines(f.reason, textW, rowsFor(textW, 2)).map((text, i) => ({ text, tone: i === 0 ? ('warn' as const) : ('dim' as const) })),
               { text: shorten(f.call, textW), tone: 'dim' as const },
             ]
           }
-          return wrapLines(l.text, textW, rowsFor(textW, WRAP_FAIL)).map(text => ({ text, tone: 'warn' as const }))
+          return wrapLines(l.text, textW, rowsFor(textW, WRAP_FAIL)).map((text, i) => ({ text, tone: i === 0 ? ('warn' as const) : ('dim' as const) }))
         }
         const tone: RowTone = l.who === 'main' && l.kind === 'info' ? 'dim' : 'text'
         return wrapLines(l.text, textW, rowsFor(textW, WRAP_LOG)).map(text => ({ text, tone }))
