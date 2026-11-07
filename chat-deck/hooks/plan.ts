@@ -10,7 +10,9 @@ import type { Activity, BandPlan, PlanStatus } from '../types'
 export const PLAN_TOOL_DEFAULT = 'mcp__chat-deck__plan'
 // The Claude desktop app's own task list: when it is in use, it feeds the plan and the plan tool stands down.
 export const HOST_PLAN = 'mcp__ccd_turn__update_plan'
-export const MIRRORED = new Set(['TodoWrite', 'TaskCreate', 'TaskUpdate', HOST_PLAN])
+/** The app's end-of-turn call: it checks the task list off on the host side, where no update_plan call shows it. */
+export const HOST_WRAP = 'mcp__ccd_turn__wrap_up'
+export const MIRRORED = new Set(['TodoWrite', 'TaskCreate', 'TaskUpdate', HOST_PLAN, HOST_WRAP])
 
 export const planPrompt = (tool: string) =>
   `Your to-do list is the ${tool} tool; the user watches it as the plan panel in the Chat Deck pane. ` +

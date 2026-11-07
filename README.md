@@ -8,11 +8,11 @@ Everything runs locally, every number comes from a real session event, and every
 
 | Mod | In one line | Version |
 |---|---|---|
-| [chat-deck](chat-deck) | A live pane beside the transcript: vitals, plan, git, permission checks, subagent cards | 0.13.0 |
-| [cache-timer](cache-timer) | Counts down until the prompt cache goes cold, and can keep it warm | 0.14.0 |
-| [model-fit](model-fit) | Checks whether the model and effort fit the task, with a Switch button | 0.12.0 |
-| [chat-handoff](chat-handoff) | Writes a handoff of the whole chat so work continues in a fresh one | 0.9.0 |
-| [pr-radar](pr-radar) | Your open GitHub PRs and the ones waiting on your review, in a band and a pane | 0.5.0 |
+| [chat-deck](chat-deck) | A live pane beside the transcript: vitals, plan, git, permission checks, subagent cards | 0.13.1 |
+| [cache-timer](cache-timer) | Counts down until the prompt cache goes cold, and can keep it warm | 0.14.1 |
+| [model-fit](model-fit) | Checks whether the model and effort fit the task, with a Switch button | 0.12.1 |
+| [chat-handoff](chat-handoff) | Writes a handoff of the whole chat so work continues in a fresh one | 0.9.1 |
+| [pr-radar](pr-radar) | Your open GitHub PRs and the ones waiting on your review, in a band and a pane | 0.5.1 |
 
 Requires Claude Code 2.1.287 or later (mods are an early-access API, so details can move between releases).
 

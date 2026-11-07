@@ -566,7 +566,7 @@ export const register: Register = on => {
     // Quiet when calm, framed when it needs you: a state that asks for something sits in a rounded frame, its border
     // the colour of the state; a calm one is a single line with no frame, which saves the frame's two rows.
     const frame = { borderStyle: 'round', paddingX: 2, paddingY: 'xs' } as const
-    const calm = { paddingX: 2 } as const
+    const calm = { paddingX: 2, paddingY: 'xs' } as const
 
     if (hidden && w) {
       return (
@@ -584,7 +584,7 @@ export const register: Register = on => {
 
     // The mods share one button language: a secondary with a letter (a key badge on the desktop), a setting drawn as
     // `Label · state`, and ✕ (x) on the far right to dismiss.
-    const hideButton = <Button variant="secondary" key="hide" role="dismiss" hotkey="x" label="✕" onPress={() => hide($)} />
+    const hideButton = <Button variant="secondary" key="hide" role="dismiss" hotkey={e.surface === 'terminal' ? 'x' : undefined} label="✕" onPress={() => hide($)} />
     const warmButton = <Button variant="secondary" key="keepwarm" hotkey="w" label={`Keep warm · ${w ? 'on' : 'off'}`} onPress={() => toggleWarm($)} />
     const warmRow = w ? <Text color={w.cold || w.error ? BAD : COLD}>{warmLine(w, left, c.now)}</Text> : null
     const showDetail = cols >= COLS_DETAIL

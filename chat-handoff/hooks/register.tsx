@@ -728,7 +728,7 @@ export const register: Register = (on, options) => {
             </Text>
             <Box flexDirection="row" gap={1} flexShrink={0}>
               <Button variant="primary" key="refresh" label="Refresh chat" hotkey="r" autoFocus onPress={noop} />
-              <Button variant="secondary" key="close" role="dismiss" hotkey="x" label="✕" onPress={noop} />
+              <Button variant="secondary" key="close" role="dismiss" hotkey={e.surface === 'terminal' ? 'x' : undefined} label="✕" onPress={noop} />
             </Box>
           </Box>
         </Box>
@@ -754,7 +754,7 @@ export const register: Register = (on, options) => {
               <Button variant="primary" key="start" label="New chat" hotkey="n" autoFocus onPress={noop} />
               <Button variant="secondary" key="copy" label="Copy" hotkey="c" onPress={noop} />
               <Button variant="secondary" key="preview" hotkey="p" label="Preview" onPress={noop} />
-              <Button variant="secondary" key="close" role="dismiss" hotkey="x" label="✕" onPress={noop} />
+              <Button variant="secondary" key="close" role="dismiss" hotkey={e.surface === 'terminal' ? 'x' : undefined} label="✕" onPress={noop} />
             </Box>
           </Box>
         </Box>
@@ -831,7 +831,7 @@ export const register: Register = (on, options) => {
                 <Button variant="primary" key="retry" label="Try again" hotkey="t" autoFocus onPress={noop} />
                 {p.file ? <Button variant="secondary" key="copy" label="Copy draft" hotkey="c" onPress={noop} /> : null}
                 {p.file ? <Button variant="secondary" key="preview" hotkey="p" label="Preview draft" onPress={noop} /> : null}
-                <Button variant="secondary" key="close" role="dismiss" hotkey="x" label="✕" onPress={noop} />
+                <Button variant="secondary" key="close" role="dismiss" hotkey={e.surface === 'terminal' ? 'x' : undefined} label="✕" onPress={noop} />
               </Box>
             </Box>
           ) : null}
@@ -854,7 +854,7 @@ export const register: Register = (on, options) => {
             <Button variant="primary" key="start" label="New chat" hotkey="n" autoFocus onPress={noop} />
             <Button variant="secondary" key="copy" label="Copy" hotkey="c" onPress={noop} />
             <Button variant="secondary" key="open" hotkey="o" label="Open file" onPress={noop} />
-            <Button variant="secondary" key="pclose" role="dismiss" hotkey="x" label="✕" onPress={noop} />
+            <Button variant="secondary" key="pclose" role="dismiss" hotkey={e.surface === 'terminal' ? 'x' : undefined} label="✕" onPress={noop} />
           </Box>
         </Box>
         {handoffText ? <Markdown key="handoff" text={handoffText} /> : <Text dimColor>No handoff yet.</Text>}

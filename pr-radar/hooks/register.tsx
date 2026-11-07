@@ -244,7 +244,7 @@ export const register: Register = (on, options) => {
       <Box flexDirection="column" rowGap="sm">
         {rest as never}
         {/* Quiet when calm, framed when it needs you: PRs to review, changes asked for, or a failed refresh get the frame. */}
-        <Box key="radar-band" flexDirection="row" flexWrap="wrap" alignItems="center" justifyContent="space-between" gap={2} {...(c?.pending || c?.changes || failed ? { borderStyle: 'round', borderColor: c?.pending ? AMBER : c?.changes ? RED : ACCENT, paddingY: 'xs' } : {})} paddingX={2}>
+        <Box key="radar-band" flexDirection="row" flexWrap="wrap" alignItems="center" justifyContent="space-between" gap={2} {...(c?.pending || c?.changes || failed ? { borderStyle: 'round', borderColor: c?.pending ? AMBER : c?.changes ? RED : ACCENT, } : {})} paddingX={2} paddingY="xs">
           <Box key="radar-left" flexDirection="row" alignItems="center" gap={2} flexShrink={1}>
             <Box key="radar-brand" flexShrink={0}>
               <Text color={ACCENT} bold wrap="truncate">
