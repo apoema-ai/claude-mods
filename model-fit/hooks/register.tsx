@@ -521,18 +521,38 @@ export const register: Register = (on, options) => {
       </Box>
     ) : null
     const autoState = auto ? (isPaused ? 'paused' : 'on') : 'off'
-    // Every button has one design, cache-timer's Keep warm: a secondary with a letter, which the desktop draws as a key badge.
-    const collapseButton = <Button variant="secondary" key="fit-collapse" label={collapsed ? 'Expand' : 'Collapse'} hotkey="c" onPress={() => undefined} />
+    // The mods share one button language: a letter on every button (a key badge on the desktop), one primary per state,
+    // a setting drawn as `Label · state`, a fold as ▾/▸, and ✕ (x) on the far right to dismiss. Rows wrap on a narrow band.
+    const collapseButton = <Button variant="secondary" key="fit-collapse" label={collapsed ? '▸' : '▾'} hotkey="c" onPress={() => undefined} />
+    const dismissButton = auto ? null : <Button variant="secondary" key="fit-dismiss" role="dismiss" label="✕" hotkey="x" onPress={() => undefined} />
+    const settings = (
+      <Box key="fit-settings" flexDirection="row" flexWrap="wrap" alignItems="center" gap={1}>
+        <Button variant="secondary" key="fit-trigger" label={`Trigger · ${trigger}`} hotkey="t" onPress={() => undefined} />
+        <Button variant="secondary" key="fit-auto" label={`Auto · ${autoState}`} hotkey="a" onPress={() => undefined} />
+      </Box>
+    )
+    // Quiet when calm, framed when it needs you: a Recommendation, or a paused Auto, sits in a rounded frame in its colour;
+    // Auto with nothing on offer is one line with no frame, which saves the frame's two rows.
+    const shell = o || isPaused ? { borderStyle: 'round', borderColor: isPaused ? AMBER : accent, paddingX: 2, paddingY: 'xs' } : { paddingX: 2 }
+    const title = (
+      <Text key="fit-brand" color={accent} bold>
+        ◆ Model Fit
+      </Text>
+    )
+    const pausedNote = isPaused ? (
+      <Text key="fit-paused" color={AMBER} wrap="wrap">
+        Auto is paused: you changed the model or effort. Press Auto · paused, or run /model-fit auto on, to resume it.
+      </Text>
+    ) : null
+
     if (collapsed) {
-      // One line: the title, the pair (or the move), and the one button that acts. Reason, warning, Trigger and Auto wait behind Expand.
+      // One line: the title, the pair (or the move), and the one button that acts. Reason, warning, Trigger and Auto wait behind ▸.
       return (
         <Box flexDirection="column" rowGap="sm">
           {rest as never}
-          <Box key="fit-band" flexDirection="row" alignItems="center" justifyContent="space-between" borderStyle="round" borderColor={isPaused ? AMBER : accent} paddingX={2} paddingY="xs">
-            <Box key="fit-line" flexDirection="row" alignItems="center" gap={1}>
-              <Text color={accent} bold>
-                ◆ Model Fit
-              </Text>
+          <Box key="fit-band" flexDirection="row" flexWrap="wrap" alignItems="center" justifyContent="space-between" gap={1} {...(shell as object)}>
+            <Box key="fit-line" flexDirection="row" alignItems="center" gap={1} flexShrink={1}>
+              {title}
               {o ? (
                 <Box key="fit-arrow" flexDirection="row" gap={1}>
                   <Text color={accent}>{up ? '▲' : '▼'}</Text>
@@ -547,13 +567,13 @@ export const register: Register = (on, options) => {
                 </Text>
               ) : null}
             </Box>
-            <Box key="fit-actions" flexDirection="row" alignItems="center" gap={2}>
+            <Box key="fit-actions" flexDirection="row" alignItems="center" gap={1}>
               {o?.queued ? (
                 <Text key="fit-queued" dimColor>
                   Queued
                 </Text>
               ) : o && !autoActs ? (
-                <Button variant="secondary" key="fit-switch" label="Switch" hotkey="s" onPress={() => undefined} />
+                <Button variant="primary" key="fit-switch" label="Switch" hotkey="s" onPress={() => undefined} />
               ) : null}
               {auto ? (
                 <Text key="fit-tag" color={isPaused ? AMBER : undefined} dimColor={!isPaused}>
@@ -561,72 +581,77 @@ export const register: Register = (on, options) => {
                 </Text>
               ) : null}
               {collapseButton}
+              {dismissButton}
             </Box>
           </Box>
         </Box>
       )
     }
-    // Left of the last row: what acts now (Switch, Queued, or what Auto is doing). Right: the two settings.
-    const lead = o?.queued ? (
+
+    if (!o) {
+      // Auto on, nothing on offer: the Setting and both settings on one line.
+      return (
+        <Box flexDirection="column" rowGap="sm">
+          {rest as never}
+          <Box key="fit-band" flexDirection="column" rowGap="xs" {...(shell as object)}>
+            <Box key="fit-head" flexDirection="row" flexWrap="wrap" alignItems="center" justifyContent="space-between" gap={1}>
+              <Box key="fit-now-row" flexDirection="row" alignItems="center" gap={1}>
+                {title}
+                <Text dimColor>Now</Text>
+                {pair('fit-now', now?.model ?? '', now?.effort ?? '')}
+              </Box>
+              <Box key="fit-head-buttons" flexDirection="row" flexWrap="wrap" alignItems="center" gap={1}>
+                {settings}
+                {collapseButton}
+              </Box>
+            </Box>
+            {pausedNote}
+          </Box>
+        </Box>
+      )
+    }
+
+    // A Recommendation, three rows: the title and the move, the reason, then what acts now and the two settings.
+    const lead = o.queued ? (
       <Text key="fit-queued" dimColor>
         Queued: switches when the agent finishes
       </Text>
-    ) : autoActs && o ? (
+    ) : autoActs ? (
       <Text key="fit-auto-note" color={accent}>
         {`Auto switches to ${label(o.to.model, toEffort)}`}
       </Text>
-    ) : o ? (
-      // Named for what it does; Enter presses it once the band has the focus.
-      <Button variant="secondary" key="fit-switch" label={`Switch to ${label(o.to.model, toEffort)}`} hotkey="s" autoFocus onPress={() => undefined} />
     ) : (
-      <Box key="fit-lead" />
+      // Named for what it does; Enter presses it once the band has the focus.
+      <Button variant="primary" key="fit-switch" label={`Switch to ${label(o.to.model, toEffort)}`} hotkey="s" autoFocus onPress={() => undefined} />
     )
     return (
       <Box flexDirection="column" rowGap="sm">
         {rest as never}
-        <Box key="fit-band" flexDirection="column" rowGap="xs" borderStyle="round" borderColor={isPaused ? AMBER : accent} paddingX={2} paddingY="xs">
-          <Box key="fit-head" flexDirection="row" alignItems="center" justifyContent="space-between">
-            <Box key="fit-title" flexDirection="row" gap={1}>
-              <Text color={accent} bold>
-                ◆ Model Fit
-              </Text>
-              {o ? <Text color={accent}>{up ? '▲ stronger' : '▼ cheaper'}</Text> : null}
+        <Box key="fit-band" flexDirection="column" rowGap="xs" {...(shell as object)}>
+          <Box key="fit-head" flexDirection="row" flexWrap="wrap" alignItems="center" justifyContent="space-between" gap={1}>
+            <Box key="fit-title" flexDirection="row" flexWrap="wrap" alignItems="center" gap={1}>
+              {title}
+              <Text color={accent}>{up ? '▲ stronger' : '▼ cheaper'}</Text>
+              {move}
             </Box>
-            <Box key="fit-head-buttons" flexDirection="row" alignItems="center" gap={2}>
+            <Box key="fit-head-buttons" flexDirection="row" alignItems="center" gap={1}>
               {collapseButton}
-              {auto ? null : <Button variant="secondary" key="fit-dismiss" label="Dismiss" hotkey="x" onPress={() => undefined} />}
+              {dismissButton}
             </Box>
           </Box>
-          {o ? (
-            move
-          ) : (
-            <Box key="fit-now-row" flexDirection="row" gap={1}>
-              <Text dimColor>Now</Text>
-              {pair('fit-now', now?.model ?? '', now?.effort ?? '')}
-            </Box>
-          )}
-          {o ? (
-            <Text key="fit-why" dimColor italic wrap="wrap">
-              {o.to.reason}
-            </Text>
-          ) : null}
+          <Text key="fit-why" dimColor italic wrap="wrap">
+            {o.to.reason}
+          </Text>
           {warn ? (
             <Text key="fit-cache" color={AMBER} wrap="wrap">
               ⚠ {warn}
             </Text>
           ) : null}
-          <Box key="fit-actions" flexDirection="row" alignItems="center" justifyContent="space-between" gap={2}>
+          <Box key="fit-actions" flexDirection="row" flexWrap="wrap" alignItems="center" justifyContent="space-between" gap={1}>
             {lead}
-            <Box key="fit-settings" flexDirection="row" alignItems="center" gap={2}>
-              <Button variant="secondary" key="fit-trigger" label={`Trigger · ${trigger}`} hotkey="t" onPress={() => undefined} />
-              <Button variant="secondary" key="fit-auto" label={`Auto · ${autoState}`} hotkey="a" onPress={() => undefined} />
-            </Box>
+            {settings}
           </Box>
-          {isPaused ? (
-            <Text key="fit-paused" color={AMBER} wrap="wrap">
-              Auto is paused because you changed the model or effort. Press Auto · paused, or run /model-fit auto on, to resume it.
-            </Text>
-          ) : null}
+          {pausedNote}
         </Box>
       </Box>
     )

@@ -1,6 +1,6 @@
 # model-fit
 
-**Version:** 0.11.0
+**Version:** 0.12.0
 
 A Claude Code mod (function hooks, Claude Code 2.1.287+) that checks whether the chat's model and effort fit the task in front of it. When they do not, a band above the prompt offers a Switch button. An Auto toggle lets the mod switch by itself.
 
@@ -42,7 +42,7 @@ With Auto on, the prompt waits up to 3 seconds for the Judge, the current turn's
 | `/model-fit trigger off`, `trigger prompt`, `trigger skill` | Sets the trigger. `trigger off` stops the looks but keeps the mod on; `/model-fit off` switches the mod off |
 | `/model-fit auto on`, `auto off` | Sets Auto (on also ends a pause) |
 
-The band holds the same controls: Switch (named for its target, `s`) on the left, Trigger (`t`) and Auto (`a`) on the right, and Collapse (`c`) and Dismiss (`x`) in the header. With Auto on there is no Switch to press: the card says `Auto switches to ...` instead. The model and effort read `opus | medium` in both views. **Collapse** (`c`) in its header folds it to one line: the model and effort as `opus | medium` (the effort is a dash until the chat's first request reports it), or the move from one pair to the other while an offer is up, the Switch button while an offer is up, the Auto state, and **Expand** (`c`). The reason, the cache warning, Trigger and Auto wait behind the toggle. The choice is kept in the settings file, so the band starts collapsed in the next chat too. Settings are kept in `~/.claude/mods/model-fit.json` (`trigger`, `auto`, `collapsed`, `guardTokens`, `models`, `efforts`, `rubricFile`); `/model-fit` and the band write it, and you can edit it by hand. The host lists no `/config` rows for a plugin loaded from a folder, so the file is the one place they live.
+The band holds the same controls in three rows: the title, `▲ stronger` or `▼ cheaper` and the move; the reason; then Switch (named for its target, `s`, the primary button) on the left and Trigger (`t`) and Auto (`a`) on the right. The fold (`▾`/`▸`, `c`) and `✕` (`x`, dismiss) sit in the header. A Recommendation sits in a rounded frame; Auto with nothing on offer is one line with no frame: `◆ Model Fit Now opus | medium`, Trigger, Auto and the fold. With Auto on there is no Switch to press: the card says `Auto switches to ...` instead. The model and effort read `opus | medium` in both views. **▾** (`c`) in its header folds it to one line: the model and effort as `opus | medium` (the effort is a dash until the chat's first request reports it), or the move from one pair to the other while an offer is up, the Switch button while an offer is up, the Auto state, **▸** (`c`) to expand, and `✕`. The reason, the cache warning, Trigger and Auto wait behind the toggle. The choice is kept in the settings file, so the band starts collapsed in the next chat too. Settings are kept in `~/.claude/mods/model-fit.json` (`trigger`, `auto`, `collapsed`, `guardTokens`, `models`, `efforts`, `rubricFile`); `/model-fit` and the band write it, and you can edit it by hand. The host lists no `/config` rows for a plugin loaded from a folder, so the file is the one place they live.
 
 ## Known limits
 
@@ -54,6 +54,7 @@ The band holds the same controls: Switch (named for its target, `s`) on the left
 
 ## Version History
 
+- **0.12.0**: a Recommendation fits in three rows (the move joins the title); Switch is the primary button; Collapse/Expand is a `▾`/`▸` fold and Dismiss is `✕` (`x`), as on every mod; Auto with nothing on offer is one line with no frame; the button rows wrap on a narrow band; the paused note is shorter.
 - **0.11.0**: the band has the same padding as cache-timer and chat-handoff (two columns each side, a little above and below), collapsed too.
 - **0.10.0**: every button has the same design as cache-timer's Keep warm: a secondary button with its key badge.
 - **0.9.0**: the band matches cache-timer and chat-handoff on desktop: quiet controls carry key badges (Collapse `c`, Trigger `t`, Auto `a`, Dismiss `x`), the settings sit on the right, Auto on says what it does instead of a dim Switch, and the pair reads `opus | medium` in both views.

@@ -172,6 +172,8 @@ for (const surface of ['desktop', 'terminal'] as const) {
     expect(w.opened, 'preview opens the pane').toContain('chat-handoff-preview')
     const pane = await $.ui.mount({ plugin: 'chat-handoff', surface, component: 'Pane', requestId: 'chat-handoff-preview', props: { title: 'Handoff preview', isFocused: true, bodyColumns: 80, placement: 'dock', scroll: { offset: 0, bodyRows: 20 }, view: {} } } as never)
     expect(await pane.find({ key: 'handoff' }), 'the pane draws the handoff as markdown').toBeDefined()
+    expect(await pane.find({ key: 'open' }), 'Open file is in the pane').toBeDefined()
+    expect(await v.find({ key: 'open' }), 'and not on the band').toBeUndefined()
     await pane.press({ key: 'pclose' })
     expect(w.closed, 'Close in the pane closes it').toContain('chat-handoff-preview')
 
@@ -200,7 +202,8 @@ for (const surface of ['desktop', 'terminal'] as const) {
     expect(log, 'the failure is logged').toContain('failed at step 2')
     expect(w.request, 'the request file is removed').toBe(false)
     expect(await v.find({ key: 'retry' }), 'failed: try again').toBeDefined()
-    expect(await v.find({ key: 'open' }), 'failed: the draft can be opened').toBeDefined()
+    expect(await v.find({ key: 'open' }), 'failed: Open draft lives in the Preview pane').toBeUndefined()
+    expect(await v.find({ key: 'preview' }), 'failed: the draft can be previewed').toBeDefined()
     expect(Object.entries(w.files).find(([k]) => k.endsWith('-draft.md'))?.[1] ?? '', 'the draft holds the request').toContain('Build a refresh mod')
   })
 

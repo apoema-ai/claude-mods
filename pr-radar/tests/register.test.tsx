@@ -61,7 +61,7 @@ test('the timer refreshes again after the interval', async ($, on) => {
   const { calls, clock } = rig(on)
   await $.session.start({ surface: 'terminal', isInteractive: true, cwd: '/work' })
   await clock.settle()
-  await clock.advance(5 * 60_000)
+  await clock.advance(120 * 60_000)
   expect(graphql(calls)).toBe(6)
 })
 
@@ -71,12 +71,12 @@ test('Manual stops the timer refreshes, Auto brings them back', async ($, on) =>
   await clock.settle()
   const answer = (await $.command.run({ command: 'pr-radar', args: 'manual' } as never)) as { text: string }
   expect(answer.text).toContain('Manual')
-  await clock.advance(5 * 60_000)
+  await clock.advance(120 * 60_000)
   expect(graphql(calls)).toBe(3)
   await $.command.run({ command: 'pr-radar', args: 'refresh' } as never)
   expect(graphql(calls)).toBe(6)
   await $.command.run({ command: 'pr-radar', args: 'auto' } as never)
-  await clock.advance(5 * 60_000)
+  await clock.advance(120 * 60_000)
   expect(graphql(calls)).toBe(9)
 })
 
@@ -125,19 +125,14 @@ for (const surface of ['terminal', 'desktop'] as const) {
     await ui.unmount()
   })
 
-  test(`the mode button flips between Auto and Manual on ${surface}`, async ($, on) => {
-    const { calls, clock } = rig(on)
+  test(`the band leaves Auto/Manual to the pane, and is framed only when something waits on me on ${surface}`, async ($, on) => {
+    const { clock } = rig(on)
     await $.session.start({ surface, isInteractive: true, cwd: '/work' })
     await clock.settle()
     const ui = await $.ui.mount({ plugin: 'pr-radar', component: 'AbovePrompt', requestId: 'band', surface, viewport, props: { hasSurvey: false, isWorking: false, maxRows: 8, bodyColumns: 116, scroll: { offset: 0, bodyRows: 8 }, view: 'band' } as never })
-    const label = async () => ((await ui.find({ key: 'radar-mode' }))?.props as { label?: string } | undefined)?.label
-    expect(await label()).toBe('Auto')
-    await ui.press({ key: 'radar-mode' })
-    expect(await label()).toBe('Manual')
-    await clock.advance(5 * 60_000)
-    expect(graphql(calls)).toBe(3)
-    await ui.press({ key: 'radar-mode' })
-    expect(await label()).toBe('Auto')
+    expect(await ui.find({ key: 'radar-mode' })).toBeUndefined()
+    // PR 3 waits on my review, so the band asks for attention.
+    expect(((await ui.find({ key: 'radar-band' }))?.props as { borderStyle?: string } | undefined)?.borderStyle).toBe('round')
     await ui.unmount()
   })
 
@@ -147,10 +142,10 @@ for (const surface of ['terminal', 'desktop'] as const) {
     await clock.settle()
     const ui = await $.ui.mount({ plugin: 'pr-radar', component: 'Pane', requestId: 'pr-radar', surface, viewport, props: { title: 'PR Radar', isFocused: true, bodyColumns: 100, placement: 'dock', scroll: { offset: 0, bodyRows: 30 }, view: 'pane' } as never })
     const label = async () => ((await ui.find({ key: 'radar-mode' }))?.props as { label?: string } | undefined)?.label
-    expect(await label()).toBe('Auto · 5m')
+    expect(await label()).toBe('Auto · 2h')
     await ui.press({ key: 'radar-mode' })
     expect(await label()).toBe('Manual')
-    await clock.advance(5 * 60_000)
+    await clock.advance(120 * 60_000)
     expect(graphql(calls)).toBe(3)
     await ui.unmount()
   })
@@ -173,15 +168,14 @@ for (const surface of ['terminal', 'desktop'] as const) {
     await clock.settle()
     const ui = await $.ui.mount({ plugin: 'pr-radar', component: 'Pane', requestId: 'pr-radar', surface, viewport, props: { title: 'PR Radar', isFocused: true, bodyColumns: 100, placement: 'dock', scroll: { offset: 0, bodyRows: 30 }, view: 'pane' } as never })
     const props = async (key: string) => (await ui.find({ key }))?.props as { variant?: string; label?: string } | undefined
-    expect((await props('radar-sort-repo'))?.variant).toBe('primary')
-    expect((await props('radar-sort-dir'))?.label).toBe('↑ Asc')
-    await ui.press({ key: 'radar-sort-number' })
-    expect((await props('radar-sort-number'))?.variant).toBe('primary')
+    // Only the tabs are primary; the chosen sort field is marked by its arrow.
     expect((await props('radar-sort-repo'))?.variant).toBe('secondary')
+    expect((await props('radar-sort-repo'))?.label).toBe('Repository ↑')
     await ui.press({ key: 'radar-sort-number' })
-    expect((await props('radar-sort-dir'))?.label).toBe('↓ Desc')
-    await ui.press({ key: 'radar-sort-dir' })
-    expect((await props('radar-sort-dir'))?.label).toBe('↑ Asc')
+    expect((await props('radar-sort-number'))?.label).toBe('Number ↑')
+    expect((await props('radar-sort-repo'))?.label).toBe('Repository')
+    await ui.press({ key: 'radar-sort-number' })
+    expect((await props('radar-sort-number'))?.label).toBe('Number ↓')
     await ui.unmount()
   })
 }

@@ -714,21 +714,21 @@ export const register: Register = (on, options) => {
     // Every state sits in a rounded frame, as model-fit's band does, its border the colour of the state.
     const frame = { borderStyle: 'round', paddingX: 2, paddingY: 'xs' } as const
 
-    // Every button has one design, cache-timer's Keep warm: a secondary with a letter, which the desktop draws as a key
-    // badge. The main action of each state comes first and takes the focus.
+    // The mods share one button language: a letter on every button (a key badge on the desktop), one primary per state,
+    // which comes first and takes the focus, and ✕ (x) on the far right to dismiss. Rows wrap on a narrow band.
     if (p.phase === 'offer') {
       return (
         <Box flexDirection="column" rowGap="sm">
           {rest}
-          <Box key="handoff-band" flexDirection="row" alignItems="center" justifyContent="space-between" gap={1} {...frame} borderColor={ACCENT}>
+          <Box key="handoff-band" flexDirection="row" flexWrap="wrap" alignItems="center" justifyContent="space-between" gap={1} {...frame} borderColor={ACCENT}>
             <Text wrap="truncate-end">
               <Text color={ACCENT}>●</Text>
               <Text tabular> {short(p.tokens)} context</Text>
               <Text dimColor> · Hand off to a fresh chat before auto-compact</Text>
             </Text>
             <Box flexDirection="row" gap={1} flexShrink={0}>
-              <Button variant="secondary" key="refresh" label="Refresh chat" hotkey="r" autoFocus onPress={noop} />
-              <Button variant="secondary" key="close" hotkey="l" label="Later" onPress={noop} />
+              <Button variant="primary" key="refresh" label="Refresh chat" hotkey="r" autoFocus onPress={noop} />
+              <Button variant="secondary" key="close" role="dismiss" hotkey="x" label="✕" onPress={noop} />
             </Box>
           </Box>
         </Box>
@@ -743,30 +743,18 @@ export const register: Register = (on, options) => {
       return (
         <Box flexDirection="column" rowGap="sm">
           {rest}
-          {/* Step names add room on desktop only: down, xs and sm are 0 rows on the terminal. */}
-          <Box key="handoff-band" flexDirection="column" rowGap="sm" {...frame} borderColor={GOOD}>
-            <Box flexDirection="column">
-              <Box flexDirection="row" alignItems="center" gap={1}>
-                <Text color={GOOD}>✓</Text>
-                <Text size="heading" weight="semibold">
-                  Handoff ready
-                </Text>
-                <Text dimColor tabular wrap="truncate-end">
-                  {facts}
-                </Text>
-              </Box>
-              <Box paddingLeft={2}>
-                <Text dimColor size="footnote" wrap="truncate-middle">
-                  {p.file}
-                </Text>
-              </Box>
-            </Box>
-            <Box flexDirection="row" gap={1} paddingLeft={2}>
-              <Button variant="secondary" key="copy" label="Copy handoff" hotkey="c" autoFocus onPress={noop} />
-              <Button variant="secondary" key="start" label="New chat" hotkey="n" onPress={noop} />
+          {/* One line: the result and its actions. The file's path and Open file are in the Preview pane. */}
+          <Box key="handoff-band" flexDirection="row" flexWrap="wrap" alignItems="center" justifyContent="space-between" gap={1} {...frame} borderColor={GOOD}>
+            <Text wrap="truncate-end">
+              <Text color={GOOD}>✓ </Text>
+              <Text bold>Handoff ready</Text>
+              <Text dimColor tabular>{` · ${facts}`}</Text>
+            </Text>
+            <Box flexDirection="row" flexWrap="wrap" gap={1} flexShrink={0}>
+              <Button variant="primary" key="start" label="New chat" hotkey="n" autoFocus onPress={noop} />
+              <Button variant="secondary" key="copy" label="Copy" hotkey="c" onPress={noop} />
               <Button variant="secondary" key="preview" hotkey="p" label="Preview" onPress={noop} />
-              <Button variant="secondary" key="open" hotkey="o" label="Open file" onPress={noop} />
-              <Button variant="secondary" key="close" hotkey="x" label="Close" onPress={noop} />
+              <Button variant="secondary" key="close" role="dismiss" hotkey="x" label="✕" onPress={noop} />
             </Box>
           </Box>
         </Box>
@@ -775,6 +763,8 @@ export const register: Register = (on, options) => {
 
     // Working or failed: one row per step; only the running (or failed) step carries a bar.
     const failed = p.phase === 'failed'
+    // The label column is as wide as the longest label, so the bars get the rest of the row.
+    const labelW = Math.min(32, Math.max(...p.steps.map(s => s.label.length)) + 1)
     const rows = p.steps.map((s, i) => {
       const icon =
         s.status === 'done' ? (
@@ -804,7 +794,7 @@ export const register: Register = (on, options) => {
       return (
         <Box key={`row${i}`} flexDirection="row" alignItems="center" gap={1}>
           <Box width={2}>{icon}</Box>
-          <Box width={32}>
+          <Box width={labelW}>
             <Text dimColor={s.status === 'wait'} wrap="truncate-end">
               {s.label}
             </Text>
@@ -836,12 +826,12 @@ export const register: Register = (on, options) => {
                 </Text>
               ) : null}
               {p.note ? <Text dimColor>{p.note}</Text> : null}
-              <Box flexDirection="row" gap={1}>
-                <Button variant="secondary" key="retry" label="Try again" hotkey="t" autoFocus onPress={noop} />
+              {/* Open draft is in the Preview pane, as Open file is for a finished handoff. */}
+              <Box flexDirection="row" flexWrap="wrap" gap={1}>
+                <Button variant="primary" key="retry" label="Try again" hotkey="t" autoFocus onPress={noop} />
                 {p.file ? <Button variant="secondary" key="copy" label="Copy draft" hotkey="c" onPress={noop} /> : null}
                 {p.file ? <Button variant="secondary" key="preview" hotkey="p" label="Preview draft" onPress={noop} /> : null}
-                {p.file ? <Button variant="secondary" key="open" hotkey="o" label="Open draft" onPress={noop} /> : null}
-                <Button variant="secondary" key="close" hotkey="x" label="Close" onPress={noop} />
+                <Button variant="secondary" key="close" role="dismiss" hotkey="x" label="✕" onPress={noop} />
               </Box>
             </Box>
           ) : null}
@@ -856,15 +846,15 @@ export const register: Register = (on, options) => {
     const noop = () => undefined
     return (
       <Box flexDirection="column" rowGap="sm">
-        <Box flexDirection="row" alignItems="center" justifyContent="space-between" gap={1}>
+        <Box flexDirection="row" flexWrap="wrap" alignItems="center" justifyContent="space-between" gap={1}>
           <Text dimColor wrap="truncate-middle">
             {tilde(handoffPath)}
           </Text>
-          <Box flexDirection="row" gap={1} flexShrink={0}>
-            <Button variant="secondary" key="copy" label="Copy handoff" hotkey="c" autoFocus onPress={noop} />
-            <Button variant="secondary" key="start" label="New chat" hotkey="n" onPress={noop} />
+          <Box flexDirection="row" flexWrap="wrap" gap={1} flexShrink={0}>
+            <Button variant="primary" key="start" label="New chat" hotkey="n" autoFocus onPress={noop} />
+            <Button variant="secondary" key="copy" label="Copy" hotkey="c" onPress={noop} />
             <Button variant="secondary" key="open" hotkey="o" label="Open file" onPress={noop} />
-            <Button variant="secondary" key="pclose" hotkey="x" label="Close" onPress={noop} />
+            <Button variant="secondary" key="pclose" role="dismiss" hotkey="x" label="✕" onPress={noop} />
           </Box>
         </Box>
         {handoffText ? <Markdown key="handoff" text={handoffText} /> : <Text dimColor>No handoff yet.</Text>}

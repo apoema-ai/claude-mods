@@ -1540,7 +1540,7 @@ export const register: Register = (on, options) => {
     const legendGap = isTerminal ? 0 : 1
 
     // Long text wraps to a few rows instead of ending in an ellipsis; the row budget counts the rows it takes.
-    const WRAP_COMMS = 3
+    const WRAP_COMMS = 2
     const WRAP_LOG = 2
     const WRAP_FAIL = 3
     const commsTextW = (w: number) => Math.max(1, w - 4 - (w < 40 ? 16 : 24))
@@ -1777,6 +1777,8 @@ export const register: Register = (on, options) => {
           ? line(
               [
                 u.costUsd !== null ? { spans: [{ text: fmtUsd(u.costUsd), color: C.text }] } : null,
+                // 0.13.0: the last request's speed shares the cost line, one row fewer.
+                m.speed && w >= 40 ? { spans: [{ text: fmtSpeed(m.speed), dim: true }], lead: 2 } : null,
                 ...u.limits.slice(0, 2).map((l, i): Piece => {
                   const lg = gauge(l.pct, 5)
                   // The time to each reset where the line has room for it: both windows fit from 56 columns,
@@ -1796,7 +1798,7 @@ export const register: Register = (on, options) => {
               w - 4,
             )
           : null}
-        {m.speed ? line([{ spans: [{ text: 'last req', dim: true }] }, { spans: [{ text: fmtSpeed(m.speed), dim: true }] }], w - 4) : null}
+        {m.speed && u.costUsd === null && u.limits.length === 0 ? line([{ spans: [{ text: 'last req', dim: true }] }, { spans: [{ text: fmtSpeed(m.speed), dim: true }] }], w - 4) : null}
         {/* The turn in flight, named as such: its edits count every loop's, its errors the main loop's. */}
         {m.isRunning
           ? line(
@@ -1893,7 +1895,7 @@ export const register: Register = (on, options) => {
       // hotspots and the totals come back with the first check that asked or was denied.
       const isQuiet = strip.length === 0 && hot.length === 0 && s.ask === 0 && s.deny === 0
       const tone: Tone = s.deny > 0 ? 'bad' : s.ask > 0 ? 'attn' : null
-      return card('gate', w, tone, head('gate', w, FIXED.gateLabel, 'permissions', rightOf([{ spans: [{ text: `${s.total} checks`, dim: true }] }])), () => (
+      return card('gate', w, tone, head('gate', w, FIXED.gateLabel, 'permissions'), () => (
         <Box flexDirection="column">
           {isQuiet ? (
             line([{ spans: [{ text: '✓', color: C.gate }] }, { spans: [{ text: s.total > 0 ? `${s.rule} allowed by rule` : 'no checks yet', dim: true }], fill: true }], w - 4)
@@ -1994,7 +1996,7 @@ export const register: Register = (on, options) => {
         const shown = cards.slice(-6)
         // A lane is its glyph, a label, the bar and a clock: below 34 columns the label narrows, below
         // 36 the bar, so a 24-column pane still holds it. From 40 they are as they always were.
-        const labelW = Math.min(17, Math.max(7, w - 17))
+        const labelW = Math.min(30, Math.max(7, w - 17, Math.floor((w - 11) / 2)))
         const barW = Math.max(4, w - 11 - labelW)
         const geo = lanes(shown, now, barW)
         return (
@@ -2152,7 +2154,7 @@ export const register: Register = (on, options) => {
             'receipt',
             w,
             'last turn',
-            fmtDuration(r.durationMs),
+            `${fmtDuration(r.durationMs)} · agents ${r.agents} · edits ${r.edits}`,
             r.costDelta !== null ? rightOf([{ spans: [{ text: `+${fmtUsd(r.costDelta)}`, color: C.text }] }]) : null,
             { text: r.reason === 'answer' ? '✓' : '✗', color: r.reason === 'answer' ? C.gate : C.warn },
           )
@@ -2160,7 +2162,7 @@ export const register: Register = (on, options) => {
       const tone: Tone = isDone && r ? (r.reason === 'answer' ? (r.errors > 0 ? 'attn' : null) : 'bad') : 'live'
       return card('receipt', w, tone, header, () => (
         <Box flexDirection="column">
-          {isDone && r ? line([stat('agents', r.agents), stat('edits', r.edits), stat('errors', r.errors, r.errors > 0)], w - 4, 3) : null}
+          {isDone && r && r.errors > 0 ? line([stat('errors', r.errors, true)], w - 4, 3) : null}
           {/* Where the turn's time went: its slowest calls (3 s or longer), each with its time and a bar against the turn. */}
           {slowCalls.length > 0 ? (
             <Box flexDirection="column">
@@ -2270,7 +2272,8 @@ export const register: Register = (on, options) => {
       const count: Piece = { spans: [{ text: label, bold: true, color: failed ? C.warn : PLAN_G_MID }] }
       const isCountInHead = Svg !== null && widthOf(count) + 1 <= inner - 14
       const headRoom = Math.max(1, inner - 2 - (isCountInHead ? widthOf(count) + 1 : 0))
-      const stepText = curStep ? `▸ ${curStep.active ?? curStep.text}` : pl.title
+      // With the steps open the list marks the step in progress, so the header names the plan instead.
+      const stepText = curStep && !isOpen ? `▸ ${curStep.active ?? curStep.text}` : pl.title
       const header = (
         <Box width={inner} columnGap={1} overflow="hidden">
           <Box flexShrink={0}>
@@ -2430,7 +2433,7 @@ export const register: Register = (on, options) => {
       const shown = [...fs].sort((x, y) => y.lastAt - x.lastAt).slice(0, 6)
       const edits = fs.reduce((n, f) => n + f.edits, 0)
       const byName = (id: string) => (id === MAIN_ID ? 'main' : shorten(nodeName(id, cards), 10))
-      return card('files', w, null, head('files', w, 'files', `${fs.length} edited this session`, rightOf([{ spans: [{ text: plural(edits, 'edit'), dim: true }] }])), () => (
+      return card('files', w, null, head('files', w, 'files', `${fs.length} edited this session`, edits > fs.length ? rightOf([{ spans: [{ text: plural(edits, 'edit'), dim: true }] }]) : null), () => (
         <Box flexDirection="column">
           {shown.map(f => {
             const isThisTurn = t.startedAt > 0 && f.lastAt >= t.startedAt
@@ -2496,9 +2499,9 @@ export const register: Register = (on, options) => {
             />
           ) : null}
           {shown.map(x => (
-            <Box>
+            <Box alignItems="flex-start">
               <Box width={w < 40 ? 16 : 24} flexShrink={0}>
-                <Text color={x.kind === 'prompt' ? C.main : C.agent} wrap="truncate">{`${shorten(nodeName(x.from, loopsAll), 8)} → ${shorten(nodeName(x.to, loopsAll), 10)}`}</Text>
+                <Text color={C.dim} wrap="truncate">{`${shorten(nodeName(x.from, loopsAll), 8)} → ${shorten(nodeName(x.to, loopsAll), 10)}`}</Text>
               </Box>
               <Box flexDirection="column" width={commsTextW(w)} overflow="hidden">
                 {wrapLines(x.text, commsTextW(w), rowsFor(commsTextW(w), WRAP_COMMS)).map(t => (
@@ -2523,7 +2526,6 @@ export const register: Register = (on, options) => {
               />
             </Box>
           ) : null}
-          {msgs.length > 1 ? <Text color={C.dim} wrap="truncate">{'replay the chat message by message'}</Text> : null}
         </Box>
       ))
     }
@@ -2544,7 +2546,7 @@ export const register: Register = (on, options) => {
     const planOpenRows = pl && v.planOpen === true ? Math.min(12, pl.steps.length) + (pl.steps.length > 12 ? 1 : 0) : 0
     // Each panel's rows (its border, header and body), plus the one row of air above it. A folded card is its header.
     const rowsOf: Record<Panel, number> = {
-      main: 5 + (ctxGauge ? 1 : 0) + (u.costUsd !== null || u.limits.length > 0 ? 1 : 0) + (m.speed ? 1 : 0) + (m.isRunning ? 1 : 0),
+      main: 5 + (ctxGauge ? 1 : 0) + (u.costUsd !== null || u.limits.length > 0 ? 1 : 0) + (m.speed && (colW < 40 || (u.costUsd === null && u.limits.length === 0)) ? 1 : 0) + (m.isRunning ? 1 : 0),
       plan: 6 + (pl ? planLineRows(pl, colW - 4) - 1 : 0) + planOpenRows,
       git: 5,
       architect: 5 + (FIXED.moments && colW - 4 < 44 ? 1 : 0) + (hasTimeline ? 1 : 0) + (a.lastAdvice ? 1 : 0),
@@ -2552,9 +2554,9 @@ export const register: Register = (on, options) => {
       checks: 5 + Math.min(3, rs.length) + (untested > 0 ? 1 : 0) + (lastRun && !lastRun.isOk && lastRun.reason ? 2 : 0),
       agents: (cards.length > FIXED.maxCards ? 3 + Math.min(6, cards.length) : 12) + expandedRows,
       loops: 1,
-      receipt: (m.isRunning ? 4 : 5) + (t.isReviewing ? 1 : 0) + (slowCalls.length > 0 ? 1 + slowCalls.length : 0),
+      receipt: (m.isRunning || !(r?.errors) ? 4 : 5) + (t.isReviewing ? 1 : 0) + (slowCalls.length > 0 ? 1 + slowCalls.length : 0),
       files: 4 + Math.min(6, fs.length) + (fs.length > 6 ? 1 : 0),
-      comms: 6 + (msgs.length > 1 ? 1 : 0) + Math.min(4, msgs.length) + (Svg && W >= 40 ? 6 : 0) + msgs.slice(-4).reduce((n, x) => n + wrapLines(x.text, commsTextW(colW), rowsFor(commsTextW(colW), WRAP_COMMS)).length - 1, 0),
+      comms: 6 + Math.min(4, msgs.length) + (Svg && W >= 40 ? 6 : 0) + msgs.slice(-4).reduce((n, x) => n + wrapLines(x.text, commsTextW(colW), rowsFor(commsTextW(colW), WRAP_COMMS)).length - 1, 0),
       log: 0,
     }
     for (const p of panels) if (isFolded(p) && p !== 'agents' && p !== 'loops' && p !== 'log') rowsOf[p] = 4
@@ -2563,8 +2565,9 @@ export const register: Register = (on, options) => {
     // the gate and the architect take whichever is shorter, so neither column runs on alone.
     const inOrder = (ps: Panel[]) => panels.filter(p => ps.includes(p))
     const left: Panel[] = panels.filter(p => p === 'main' || p === 'plan' || p === 'checks' || p === 'git')
-    const right: Panel[] = panels.filter(p => p === 'agents' || p === 'loops' || p === 'receipt' || p === 'files' || p === 'comms')
-    for (const p of panels.filter(x => x === 'gate' || x === 'architect')) (colRows(left) <= colRows(right) ? left : right).push(p)
+    const right: Panel[] = panels.filter(p => p === 'agents' || p === 'loops' || p === 'comms')
+    // 0.13.0: the last turn and the files float too, so the two columns end close together.
+    for (const p of panels.filter(x => x === 'gate' || x === 'architect' || x === 'receipt' || x === 'files')) (colRows(left) <= colRows(right) ? left : right).push(p)
     const leftCol = inOrder(left)
     const rightCol = inOrder(right)
     // Where the right column ends well short of the left, the log fills it, rather than run under both.
