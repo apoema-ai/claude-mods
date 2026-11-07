@@ -422,7 +422,7 @@ test('the gate strip fills from checks and a row opens its redacted drill-down',
   await $.tool.check({ tool: 'Read', input: { file_path: '/a/b.ts' }, tool_use_id: 'k1' })
   await $.tool.check({ tool: 'Bash', input: { command: 'curl -H "Authorization: Bearer abcdefgh12345" api' }, tool_use_id: 'k2' })
   const ui = await $.ui.mount({ ...pane(64), surface: 'terminal' })
-  expect(await ui.find({ text: /2 checks/ })).toBeDefined()
+  expect(await ui.find({ text: /all 2/ })).toBeDefined()
   expect(await ui.find({ text: /1 pending/ })).toBeDefined()
   await ui.press({ key: 'gate-shell' })
   expect(await ui.find({ text: /Authorization: Bearer •••/ })).toBeDefined()
@@ -1068,7 +1068,7 @@ test("a subagent's turn start is its own: no prompt line, and the main turn keep
   const ui = await $.ui.mount({ ...pane(64), surface: 'terminal' })
   expect(await ui.find({ text: /Look at the parser again/ })).toBeUndefined()
   expect(await ui.find({ text: /refactor it/ })).toBeDefined()
-  expect(await ui.find({ text: /^edits 1$/ })).toBeDefined()
+  expect(await ui.find({ text: /edits 1/ })).toBeDefined()
   await ui.unmount()
 })
 
@@ -1967,7 +1967,7 @@ test('a card folds to its header on its chevron and unfolds again; the fold is k
   expect((await ui.find({ key: 'fold-gate' }))?.props.label).toBe('▾')
   await ui.press({ key: 'fold-gate' })
   expect(await ui.find({ text: /^3 allowed by rule$/ }), 'the body is folded away').toBeUndefined()
-  expect(await ui.find({ text: /GATE · permissions/ }), 'the header stays').toBeDefined()
+  expect(await ui.find({ text: /gate · permissions/ }), 'the header stays').toBeDefined()
   expect((await ui.find({ key: 'fold-gate' }))?.props.label).toBe('▸')
   await ui.unmount()
   const again = await $.ui.mount({ ...pane(64), surface: 'terminal' })
@@ -2059,7 +2059,7 @@ test('the header chips are buttons that unfold (and scroll to) their panel', asy
   await desk.unmount()
 })
 
-test('wide, the now and attention panels hold the left column; gate and architect go where there is room', async ($, on) => {
+test('wide, the now and attention panels hold the left column; gate, architect, last turn and files go where there is room', async ($, on) => {
   await busySession($, on)
   const ui = await $.ui.mount({ ...pane(130), surface: 'terminal' })
   const keysIn = (n: unknown, out: string[] = []): string[] => {
@@ -2076,7 +2076,8 @@ test('wide, the now and attention panels hold the left column; gate and architec
   const l = keysIn(leftCol)
   const r = keysIn(rightCol)
   expect(l.slice(0, 2), 'main heads the left column, checks under it').toEqual(['main', 'checks'])
-  expect(r.includes('files'), 'the work is on the right').toBe(true)
-  expect([...l, ...r].filter(k => k === 'gate' || k === 'architect').sort()).toEqual(['architect', 'gate'])
+  expect(r.includes('comms'), 'the work is on the right').toBe(true)
+  // Gate, architect, the last turn and the files float to the shorter column, each drawn once.
+  expect([...l, ...r].filter(k => ['gate', 'architect', 'receipt', 'files'].includes(k)).sort()).toEqual(['architect', 'files', 'gate', 'receipt'])
   await ui.unmount()
 })

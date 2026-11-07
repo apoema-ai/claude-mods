@@ -310,7 +310,7 @@ test('the card has one action, Switch, and it sends no prompt of its own', { tim
   const v = await mountBand($ as never)
   expect(await v.find({ type: 'Button', key: 'fit-go' }), 'no Switch and go').toBeUndefined()
   expect(await v.find({ type: 'Button', text: /^Switch to opus · high$/ }), 'the primary names its target').toBeDefined()
-  expect(await v.find({ type: 'Button', text: /^Dismiss$/ }), 'the dismiss has a word, not a glyph').toBeDefined()
+  expect(((await v.find({ type: 'Button', key: 'fit-dismiss' })) as { props: { label?: string } } | undefined)?.props.label, 'the dismiss is ✕, as on every mod').toBe('✕')
   await v.press({ key: 'fit-switch' })
   await clock.settle()
   expect(submitted, 'only the person prompt went out').toHaveLength(1)

@@ -563,32 +563,35 @@ export const register: Register = on => {
     const left = c.lastEnd + c.ttlMs - c.now
     // A surface with no column count gets the wide layout. The frame (border and padding) takes 6 columns.
     const cols: number = (e.props.bodyColumns ?? COLS_WIDE + FRAME_COLS) - FRAME_COLS
-    // Every state sits in a rounded frame, as model-fit's band does, its border the colour of the state.
+    // Quiet when calm, framed when it needs you: a state that asks for something sits in a rounded frame, its border
+    // the colour of the state; a calm one is a single line with no frame, which saves the frame's two rows.
     const frame = { borderStyle: 'round', paddingX: 2, paddingY: 'xs' } as const
+    const calm = { paddingX: 2 } as const
 
     if (hidden && w) {
       return (
         <Box flexDirection="column">
           {rest}
-          <Box key="cache-band" flexDirection="row" alignItems="center" justifyContent="space-between" gap={1} {...frame} borderColor={w.error || w.cold ? BAD : COLD}>
+          <Box key="cache-band" flexDirection="row" flexWrap="wrap" alignItems="center" justifyContent="space-between" gap={1} {...(w.error || w.cold ? { ...frame, borderColor: BAD } : calm)}>
             <Text wrap="truncate-end" color={w.error || w.cold ? BAD : COLD}>
               {`◷ Keeping cache warm · ${pingStatus(w, left)}`}
             </Text>
-            <Button variant="secondary" key="stop" hotkey="s" label="Stop keeping warm" onPress={() => stopWarm($, 'Keep warm is off.')} />
+            <Button variant="secondary" key="stop" hotkey="w" label="Keep warm · on" onPress={() => stopWarm($, 'Keep warm is off.')} />
           </Box>
         </Box>
       )
     }
 
-    // Every button has one design, this one's: a secondary with a letter, which the desktop draws as a key badge.
-    const hideButton = <Button variant="secondary" key="hide" hotkey="h" label="Hide" onPress={() => hide($)} />
-    const warmButton = <Button variant="secondary" key="keepwarm" hotkey="w" label={w ? 'Stop keeping warm' : 'Keep warm'} onPress={() => toggleWarm($)} />
+    // The mods share one button language: a secondary with a letter (a key badge on the desktop), a setting drawn as
+    // `Label · state`, and ✕ (x) on the far right to dismiss.
+    const hideButton = <Button variant="secondary" key="hide" role="dismiss" hotkey="x" label="✕" onPress={() => hide($)} />
+    const warmButton = <Button variant="secondary" key="keepwarm" hotkey="w" label={`Keep warm · ${w ? 'on' : 'off'}`} onPress={() => toggleWarm($)} />
     const warmRow = w ? <Text color={w.cold || w.error ? BAD : COLD}>{warmLine(w, left, c.now)}</Text> : null
     const showDetail = cols >= COLS_DETAIL
     // The last turn's first request found the cache reset while this band said warm: say what it cost, until the next reply.
     // It is about the previous reply, so it is the bottom line, under what the cache is doing now.
     const rewroteRow = c.rewrote ? (
-      <Text key="rewrote" wrap="truncate-end" color={COLD}>
+      <Text key="rewrote" size="footnote" wrap="truncate-end" color={COLD}>
         {showDetail
           ? `↻ The cache had been reset (a model switch, a compaction or similar), so that reply wrote ${short(c.rewrote)} tokens to it again`
           : `↻ Cache was reset · that reply rewrote ${short(c.rewrote)}`}
@@ -601,7 +604,7 @@ export const register: Register = on => {
       return (
         <Box flexDirection="column" rowGap="sm">
           {rest}
-          <Box key="cache-band" flexDirection="row" alignItems="center" justifyContent="space-between" gap={1} {...frame} borderColor={COLD}>
+          <Box key="cache-band" flexDirection="row" flexWrap="wrap" alignItems="center" justifyContent="space-between" gap={1} {...frame} borderColor={COLD}>
             <Text wrap="truncate-end">
               <Text color={COLD}>{`↻ Cache reset by ${reset.why}`}</Text>
               {showDetail ? <Text dimColor>{` · ${cost}`}</Text> : null}
@@ -652,29 +655,34 @@ export const register: Register = on => {
       return (
         <Box flexDirection="column" rowGap="sm">
           {rest}
-          <Box key="cache-band" flexDirection="column" rowGap="xs" {...frame} borderColor={color}>
-          <Box flexDirection="row" alignItems="center" justifyContent="space-between" gap={1}>
-            <Box flexDirection="row" alignItems="center" gap={1} flexShrink={1}>
-              <Text>
-                <Text color={color}>◷ Cache warm </Text>
-                <Text bold color={color}>
-                  {mmss(left)}
+          {/* Calm: one line. A keep warm that failed or found the cache cold is the exception, and gets the frame. */}
+          <Box key="cache-band" flexDirection="column" rowGap="xs" {...(w?.error || w?.cold ? { ...frame, borderColor: BAD } : calm)}>
+            <Box flexDirection="row" flexWrap="wrap" alignItems="center" justifyContent="space-between" gap={1}>
+              <Box flexDirection="row" alignItems="center" gap={1} flexShrink={1}>
+                <Text>
+                  <Text color={color}>◷ Cache warm </Text>
+                  <Text bold color={color}>
+                    {mmss(left)}
+                  </Text>
                 </Text>
-              </Text>
-              {bar as never}
-              {showDetail ? (
-                <Text dimColor wrap="truncate-end">
-                  {`${short(c.tokens)} cached · ${lengthLabel(c)}`}
-                </Text>
-              ) : null}
+                {bar as never}
+                {/* Keep warm's progress takes the detail's place, at every width: a failed ping must stay in view. */}
+                {w ? (
+                  <Text color={w.error || w.cold ? BAD : undefined} dimColor={!w.error && !w.cold} wrap="truncate-end">
+                    {warmLine(w, left, c.now)}
+                  </Text>
+                ) : showDetail ? (
+                  <Text dimColor wrap="truncate-end">
+                    {`${short(c.tokens)} cached · ${lengthLabel(c)}`}
+                  </Text>
+                ) : null}
+              </Box>
+              <Box flexDirection="row" gap={1}>
+                {warmButton}
+                {hideButton}
+              </Box>
             </Box>
-            <Box flexDirection="row" gap={1}>
-              {warmButton}
-              {hideButton}
-            </Box>
-          </Box>
-          {warmRow}
-          {rewroteRow}
+            {rewroteRow}
           </Box>
         </Box>
       )
@@ -702,7 +710,7 @@ export const register: Register = on => {
       <Box flexDirection="column" rowGap="sm">
         {rest}
         <Box key="cache-band" flexDirection="column" rowGap="xs" {...frame} borderColor={COLD}>
-          <Box flexDirection="row" alignItems="center" justifyContent="space-between" gap={1}>
+          <Box flexDirection="row" flexWrap="wrap" alignItems="center" justifyContent="space-between" gap={1}>
             <Text wrap="truncate-end">{coldParts}</Text>
             <Box flexDirection="row" gap={1}>
               {coldButton}

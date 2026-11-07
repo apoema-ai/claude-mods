@@ -59,7 +59,7 @@ const WAIT_CAP = 3
 
 // The login of the person running the session, learnt once from `gh`.
 let me = ''
-let everyMs = 5 * 60_000
+let everyMs = 120 * 60_000
 let startMode: Mode = 'auto'
 
 type Mode = 'auto' | 'manual'
@@ -121,7 +121,7 @@ async function tick($: EngineInterface) {
 
 export const register: Register = (on, options) => {
   const minutes = Number(options.refreshMinutes)
-  everyMs = Math.max(1, Number.isFinite(minutes) ? minutes : 5) * 60_000
+  everyMs = Math.max(1, Number.isFinite(minutes) ? minutes : 120) * 60_000
   startMode = String(options.refreshMode ?? 'auto').toLowerCase() === 'manual' ? 'manual' : 'auto'
 
   on('session.start', async ($, e, next) => {
@@ -191,12 +191,6 @@ export const register: Register = (on, options) => {
     await pickSort($, 'number')
     return { element: e.element }
   })
-  on('ui.press', { plugin: NAME, element: 'radar-sort-dir' }, async ($, e) => {
-    const { value: cur = null } = await $.state.get(SORT)
-    const s = cur ?? DEFAULT_SORT
-    await $.state.set(SORT, { field: s.field, dir: s.dir === 'asc' ? 'desc' : 'asc' })
-    return { element: e.element }
-  })
   on('ui.press', { plugin: NAME, element: 'radar-mode' }, async ($, e) => {
     const { value: mode = startMode } = await $.state.get(MODE)
     const nextMode: Mode = mode === 'auto' ? 'manual' : 'auto'
@@ -220,7 +214,6 @@ export const register: Register = (on, options) => {
     if (hidden) return next(e)
     const { value: data = null } = await $.state.get(DATA)
     const { value: busy = false } = await $.state.get(BUSY)
-    const { value: mode = startMode } = await $.state.get(MODE)
     const drawn = await Promise.resolve(next(e)).catch(() => null)
     const rest = drawn && typeof drawn === 'object' && (drawn as { type?: string }).type !== 'engine' ? drawn : null
     const { Box, Text, Button } = $.ui.resolve(e)
@@ -250,7 +243,8 @@ export const register: Register = (on, options) => {
     return (
       <Box flexDirection="column" rowGap="sm">
         {rest as never}
-        <Box key="radar-band" flexDirection="row" alignItems="center" justifyContent="space-between" gap={2} borderStyle="round" borderColor={ACCENT} paddingX={2} paddingY="xs">
+        {/* Quiet when calm, framed when it needs you: PRs to review, changes asked for, or a failed refresh get the frame. */}
+        <Box key="radar-band" flexDirection="row" flexWrap="wrap" alignItems="center" justifyContent="space-between" gap={2} {...(c?.pending || c?.changes || failed ? { borderStyle: 'round', borderColor: c?.pending ? AMBER : c?.changes ? RED : ACCENT, paddingY: 'xs' } : {})} paddingX={2}>
           <Box key="radar-left" flexDirection="row" alignItems="center" gap={2} flexShrink={1}>
             <Box key="radar-brand" flexShrink={0}>
               <Text color={ACCENT} bold wrap="truncate">
@@ -262,11 +256,11 @@ export const register: Register = (on, options) => {
             </Box>
           </Box>
           <Box key="radar-actions" flexDirection="row" alignItems="center" gap={1} flexShrink={0}>
-            {/* Desktop draws `label`, not children, and draws dimColor as disabled: the visible text goes in label, nothing dim but a busy Refresh. */}
-            <Button variant="secondary" key="radar-mode" label={mode === 'auto' ? 'Auto' : 'Manual'} hotkey={hk('a')} onPress={() => undefined} />
+            {/* Desktop draws `label`, not children, and draws dimColor as disabled: the visible text goes in label, nothing dim but a busy Refresh.
+                Auto/Manual is a setting: it lives in the pane and in /pr-radar auto|manual. */}
             <Button variant="secondary" key="radar-refresh" label={`${failed ? '⚠ ' : ''}↻${age ? ` ${age}` : ''}`} hotkey={hk('r')} dimColor={busy} onPress={() => undefined} />
             <Button variant="secondary" key="radar-open" label="Open" hotkey={hk('o')} onPress={() => undefined} />
-            <Button variant="secondary" key="radar-hide" role="dismiss" label="✕" hotkey={hk('h')} onPress={() => undefined} />
+            <Button variant="secondary" key="radar-hide" role="dismiss" label="✕" hotkey={hk('x')} onPress={() => undefined} />
           </Box>
         </Box>
       </Box>
@@ -398,18 +392,20 @@ export const register: Register = (on, options) => {
             <Button key="radar-tab-review" variant={tab === 'review' ? 'primary' : 'secondary'} label={c?.pending ? `To review · ${c.pending} new` : `To review · ${data?.reviewing.length ?? 0}`} hotkey="v" onPress={() => undefined} />
           </Box>
           <Box key="right" flexDirection="row" flexWrap="wrap" alignItems="center" gap={1}>
-            <Text dimColor>{busy ? 'Refreshing…' : data ? `Updated ${ago(data.at, now)} ago`.replace('now ago', 'just now') : ''}</Text>
             {hidden ? <Button variant="secondary" key="radar-show" label="Show bar" hotkey="b" onPress={() => undefined} /> : null}
             <Button variant="secondary" key="radar-mode" label={mode === 'auto' ? `Auto · ${everyLabel()}` : 'Manual'} hotkey="a" onPress={() => undefined} />
             <Button variant="secondary" key="radar-refresh" label="Refresh" hotkey="r" dimColor={busy} onPress={() => undefined} />
           </Box>
         </Box>
-        <Box key="sort" flexDirection="row" flexWrap="wrap" alignItems="center" gap={1}>
-          <Text dimColor>Sort by</Text>
-          {(['repo', 'title', 'number'] as const).map(f => (
-            <Button key={`radar-sort-${f}`} variant={sort.field === f ? 'primary' : 'secondary'} label={SORT_LABEL[f]} hotkey={SORT_KEY[f]} onPress={() => undefined} />
-          ))}
-          <Button key="radar-sort-dir" variant="secondary" label={sort.dir === 'asc' ? '↑ Asc' : '↓ Desc'} hotkey="d" onPress={() => undefined} />
+        <Box key="sort" flexDirection="row" flexWrap="wrap" alignItems="center" justifyContent="space-between" gap={1}>
+          <Box key="sort-by" flexDirection="row" flexWrap="wrap" alignItems="center" gap={1}>
+            <Text dimColor>Sort by</Text>
+            {/* The chosen field is marked by its arrow, not by a primary pill: primary is the tabs'. Pressing it again flips it. */}
+            {(['repo', 'title', 'number'] as const).map(f => (
+              <Button key={`radar-sort-${f}`} variant="secondary" label={sort.field === f ? `${SORT_LABEL[f]} ${sort.dir === 'asc' ? '↑' : '↓'}` : SORT_LABEL[f]} hotkey={SORT_KEY[f]} onPress={() => undefined} />
+            ))}
+          </Box>
+          <Text dimColor>{busy ? 'Refreshing…' : data ? `Updated ${ago(data.at, now)} ago`.replace('now ago', 'just now') : ''}</Text>
         </Box>
         {data?.error ? (
           <Text key="error" color={RED} wrap="wrap">

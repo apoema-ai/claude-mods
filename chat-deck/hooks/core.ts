@@ -108,7 +108,7 @@ export const PANELS: readonly Panel[] = ['main', 'plan', 'checks', 'git', 'agent
 /** What used to be options and never needed to be: fixed, not configurable. */
 export const FIXED = {
   architectLabel: 'ARCHITECT',
-  gateLabel: 'GATE',
+  gateLabel: 'gate',
   moments: true,
   maxCards: 3,
   motion: true,
