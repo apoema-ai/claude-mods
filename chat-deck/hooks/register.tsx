@@ -111,7 +111,7 @@ import {
   midCut,
 } from './core'
 import type { Config, Panel } from './core'
-import { PLAN_FAIL, PLAN_G_DEEP, PLAN_G_LIGHT, PLAN_G_MID, PLAN_H, crabSvg, effortSvg, flowSvg, meterSvg, mixHex, planSvg } from './draw'
+import { LANE_H, PLAN_FAIL, PLAN_G_DEEP, PLAN_G_LIGHT, PLAN_G_MID, PLAN_H, crabSvg, effortSvg, flowSvg, laneSvg, meterSvg, mixHex, planSvg } from './draw'
 import {
   ACT_ARGS,
   DONE_HOLD_MS,
@@ -1974,45 +1974,38 @@ export const register: Register = (on, options) => {
     const expandOnPress = (id: string) => () =>
       update($, view, x => ({ ...normalize(DEFAULT_VIEW, x), expanded: normalize(DEFAULT_VIEW, x).expanded === id ? null : id }))
 
-    const agentsPanel = (w: number) => {
+    const agentsPanel = (outer: number) => {
+      // Like its siblings: a card with a fold chevron, a toned border and its status on the right. `w` is the room inside it.
+      const w = Math.max(1, outer - 4)
       // Cards need 20 columns each; when the pane can't hold the limit, lanes take over.
       const fit = Math.max(1, Math.min(FIXED.maxCards, Math.floor((w + 1) / 21)))
       const useLanes = cards.length > fit
-      const isNarrow = w < 40
-      const header = (
-        <Box justifyContent="space-between" width={w}>
-          <Text bold wrap="truncate">
-            {isNarrow ? `agents · ${running.length}/${cards.length}` : `agents · ${running.length} running · ${cards.length} total`}
-          </Text>
-          {cards.length > 0 ? (
-            <Box flexShrink={0}>
-              <Text color={C.dim}>{`1-${Math.min(cards.length, useLanes ? 6 : fit)}${isNarrow ? '' : ' expand'}`}</Text>
-            </Box>
-          ) : null}
-        </Box>
+      const isNarrow = w < 36
+      const tone: Tone = cards.some(c => c.status === 'failed') ? 'bad' : running.length > 0 ? 'live' : null
+      const hint = cards.length > 0 ? `1-${Math.min(cards.length, useLanes ? 6 : fit)}${isNarrow ? '' : ' expand'}` : null
+      const header = head(
+        'agents',
+        outer,
+        'agents',
+        cards.length > 0 ? (isNarrow ? `${running.length}/${cards.length}` : `${running.length} running · ${cards.length} total`) : null,
+        hint ? rightOf([{ spans: [{ text: hint, dim: true }] }]) : null,
       )
-      if (cards.length === 0) {
-        return (
-          <Box flexDirection="column" width={w}>
-            {header}
-            <Text color={C.dim}>no subagents yet</Text>
-          </Box>
-        )
-      }
+      if (cards.length === 0) return card('agents', outer, tone, header, () => <Text color={C.dim}>no subagents yet</Text>)
       if (useLanes) {
         const shown = cards.slice(-6)
         // A lane is its glyph, a label, the bar and a clock: below 34 columns the label narrows, below
-        // 36 the bar, so a 24-column pane still holds it. From 40 they are as they always were.
-        const labelW = Math.min(30, Math.max(7, w - 17, Math.floor((w - 11) / 2)))
+        // 36 the bar, so a 24-column pane still holds it.
+        const labelW = Math.min(17, Math.max(7, w - 17))
         const barW = Math.max(4, w - 11 - labelW)
         const geo = lanes(shown, now, barW)
-        return (
+        return card('agents', outer, tone, header, () => (
           <Box flexDirection="column" width={w}>
-            {header}
             {cards.length > shown.length ? <Text color={C.dim}>{`+${cards.length - shown.length} earlier`}</Text> : null}
             {shown.map((c, i) => {
-              const gm = geo[i]
+              const gm = geo[i] ?? { before: 0, bar: 1, after: barW - 1 }
               const isViewed = viewed === c.id
+              // The terminal's bar: the plan bar's gradient over the agent's span, red when it failed.
+              const barCell = (k: number) => (c.status === 'failed' ? PLAN_FAIL : mixHex(PLAN_G_LIGHT, PLAN_G_DEEP, gm.bar > 1 ? k / (gm.bar - 1) : 1))
               return (
                 <Box columnGap={1}>
                   <Text color={statusColor(c)} bold={isViewed}>
@@ -2021,26 +2014,33 @@ export const register: Register = (on, options) => {
                   <Box width={labelW} flexShrink={0}>
                     <Button key={`card-${c.id}`} plain hotkey={String(i + 1)} label={shorten(cardLabel(c, cards), labelW - 3)} onPress={expandOnPress(c.id)} />
                   </Box>
-                  <Box flexShrink={0}>
-                    <Text>
-                      <Text color={C.faint}>{'·'.repeat(gm?.before ?? 0)}</Text>
-                      <Text color={statusColor(c)}>{'━'.repeat(gm?.bar ?? 1)}</Text>
-                      <Text color={C.faint}>{'·'.repeat(gm?.after ?? 0)}</Text>
-                    </Text>
+                  <Box flexShrink={0} width={barW}>
+                    {Svg ? (
+                      <Svg key={`lane-${c.id}`} source={laneSvg(gm, c.status, barW * 7)} alt={`${cardLabel(c, cards)}: ${c.status}`} height={LANE_H} />
+                    ) : (
+                      <Text>
+                        <Text color={C.faint}>{'·'.repeat(gm.before)}</Text>
+                        {Array.from({ length: gm.bar }, (_, k) => (
+                          <Text key={`b-${k}`} color={barCell(k)} dimColor={c.status === 'done'}>
+                            ━
+                          </Text>
+                        ))}
+                        <Text color={C.faint}>{'·'.repeat(gm.after)}</Text>
+                      </Text>
+                    )}
                   </Box>
                   {clock(`lane-clock-${c.id}`, c.spawnedAt, c.endedAt, C.dim)}
                 </Box>
               )
             })}
           </Box>
-        )
+        ))
       }
       const shown = cards.slice(-fit)
       const cardW = Math.max(20, Math.floor((w - (shown.length - 1)) / shown.length))
       const centers = shown.map((_, i) => i * (cardW + 1) + Math.floor(cardW / 2))
-      return (
+      return card('agents', outer, tone, header, () => (
         <Box flexDirection="column" width={w}>
-          {header}
           {rail('fan-out', running.length > 0, C.agent, w, centers)}
           <Box columnGap={1}>
             {shown.map((c, i) => {
@@ -2086,13 +2086,13 @@ export const register: Register = (on, options) => {
           </Box>
           {rail('merge', running.length > 0, C.agent, w, centers, true)}
         </Box>
-      )
+      ))
     }
 
     const expandedCard = cards.find(c => c.id === v.expanded)
     const expandedPanel = (w: number) =>
       expandedCard ? (
-        <Box flexDirection="column" borderStyle="single" borderColor={C.agent} paddingX={1} width={w}>
+        <Box flexDirection="column" borderStyle="round" borderColor={toneColor(expandedCard.status === 'failed' ? 'bad' : expandedCard.status === 'running' ? 'live' : null)} paddingX={1} marginTop={1} width={w}>
           <Text bold wrap="wrap">
             {expandedCard.description || expandedCard.type}
           </Text>
@@ -2125,19 +2125,19 @@ export const register: Register = (on, options) => {
     const loopsPanel = (w: number) => {
       if (lp.length === 0) return null
       const active = lp.filter(l => isLoopActive(l, now)).length
-      const dots = lp.slice(-Math.max(4, marksIn(w - 38, isTerminal)))
+      const dots = lp.slice(-Math.max(4, marksIn(w - 6, isTerminal)))
       const isNarrow = w < 40
-      return (
-        <Box width={w} columnGap={1}>
-          <Text bold>{isNarrow ? 'loops' : 'other loops'}</Text>
-          <Text dimColor>{isNarrow ? `${lp.length} · ${active} active` : `${lp.length} seen · ${active} active`}</Text>
-          {markRow(
+      return card(
+        'loops',
+        w,
+        active > 0 ? 'live' : null,
+        head('loops', w, isNarrow ? 'loops' : 'other loops', `${lp.length} seen`, rightOf([{ spans: [{ text: `${active} active`, dim: true }] }])),
+        () =>
+          markRow(
             dots.map(l => (
               <Text color={isLoopActive(l, now) ? C.agent : l.isDone ? C.dim : C.faint}>{isLoopActive(l, now) ? '●' : l.isDone ? '✓' : '○'}</Text>
             )),
-            1,
-          )}
-        </Box>
+          ),
       )
     }
 
@@ -2548,7 +2548,7 @@ export const register: Register = (on, options) => {
     const hasFooter = e.props.isFocused === true && keys.length > 0
 
     // ---- layout: the rows each panel takes, how the two columns share them, and what is left for the log
-    const expandedRows = expandedCard ? 10 + Math.ceil(((expandedCard.prompt?.length ?? 0) + expandedCard.answer.length) / Math.max(10, W - 6)) : 0
+    const expandedRows = expandedCard ? 11 + Math.ceil(((expandedCard.prompt?.length ?? 0) + expandedCard.answer.length) / Math.max(10, W - 6)) : 0
     const hot0 = hotspots(g.recent)
     const isGateQuiet = g.recent.every(c => c.verdict === 'rule') && hot0.length === 0 && s.ask === 0 && s.deny === 0
     const planOpenRows = pl && v.planOpen === true ? Math.min(12, pl.steps.length) + (pl.steps.length > 12 ? 1 : 0) : 0
@@ -2560,14 +2560,14 @@ export const register: Register = (on, options) => {
       architect: 5 + (FIXED.moments && colW - 4 < 44 ? 1 : 0) + (hasTimeline ? 1 : 0) + (a.lastAdvice ? 1 : 0),
       gate: (isGateQuiet ? 6 : 7 + hot0.length) + (colW < 44 ? 1 : 0) + (v.gateOpen ? 5 : 0),
       checks: 5 + Math.min(3, rs.length) + (untested > 0 ? 1 : 0) + (lastRun && !lastRun.isOk && lastRun.reason ? 2 : 0),
-      agents: (cards.length > FIXED.maxCards ? 3 + Math.min(6, cards.length) : 12) + expandedRows,
-      loops: 1,
-      receipt: (m.isRunning || !(r?.errors) ? 4 : 5) + (t.isReviewing ? 1 : 0) + (slowCalls.length > 0 ? 1 + slowCalls.length : 0),
+      agents: (cards.length > FIXED.maxCards ? 5 + Math.min(6, cards.length) + (cards.length > 6 ? 1 : 0) : 14) + expandedRows,
+      loops: lp.length === 0 ? 1 : 4,
+      receipt: (m.isRunning ? 4 : 5) + (t.isReviewing ? 1 : 0) + (slowCalls.length > 0 ? 1 + slowCalls.length : 0),
       files: 4 + Math.min(6, fs.length) + (fs.length > 6 ? 1 : 0),
       comms: 6 + Math.min(4, msgs.length) + (Svg && W >= 40 ? 6 : 0) + msgs.slice(-4).reduce((n, x) => n + wrapLines(x.text, commsTextW(colW), rowsFor(commsTextW(colW), WRAP_COMMS)).length - 1, 0),
       log: 0,
     }
-    for (const p of panels) if (isFolded(p) && p !== 'agents' && p !== 'loops' && p !== 'log') rowsOf[p] = 4
+    for (const p of panels) if (isFolded(p) && p !== 'log') rowsOf[p] = p === 'agents' ? 3 + expandedRows : p === 'loops' ? (lp.length === 0 ? 1 : 3) : 4
     const colRows = (ps: Panel[]) => ps.reduce((n, p) => n + rowsOf[p], 0)
     // 0.8.0: the left column is what is happening now and what needs a look, the right the work under way;
     // the gate and the architect take whichever is shorter, so neither column runs on alone.
@@ -2694,13 +2694,11 @@ export const register: Register = (on, options) => {
     }
     const draw = (p: Panel, w: number) => drawers[p](w)
 
-    // 0.8.0: every panel sits one row below the one before, the same air throughout; the agents panel ends on
-    // its own merge rail, which is its air.
+    // 0.8.0: every panel sits one row below the one before, the same air throughout.
     const column = (ps: Panel[], w: number) => (
       <Box flexDirection="column" width={w}>
         {ps.map((p, i) => {
-          const prev = ps[i - 1]
-          const hasGap = i > 0 && prev !== 'agents'
+          const hasGap = i > 0
           return (
             <Box flexDirection="column" marginTop={hasGap ? 1 : 0}>
               {draw(p, w)}

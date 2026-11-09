@@ -253,6 +253,40 @@ ${
 </svg>`
 }
 
+export const LANE_H = 10
+
+/**
+ * One agent lane in the plan bar's look: a rounded track and, where the agent lived on the shared time axis,
+ * an emerald bar (red when failed, dimmed once finished). `geo` is lanes()' cells; a running bar glows and shimmers.
+ */
+export function laneSvg(geo: { before: number; bar: number; after: number }, status: string, w: number): string {
+  const total = Math.max(1, geo.before + geo.bar + geo.after)
+  const bw = Math.max(LANE_H, Math.round((w * geo.bar) / total))
+  const bx = Math.min(Math.round((w * geo.before) / total), w - bw)
+  const running = status === 'running'
+  const fill = status === 'failed' ? PLAN_FAIL : 'url(#cd-lane-g)'
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${LANE_H}" viewBox="0 0 ${w} ${LANE_H}">
+<style>
+.k{fill:#ece9fb}
+@media (prefers-color-scheme: dark){.k{fill:#2a2640}}
+.lv{animation:gl 1.6s ease-in-out infinite}@keyframes gl{0%,100%{opacity:.15}50%{opacity:.45}}
+.sh{animation:sw 2.2s linear infinite}@keyframes sw{from{transform:translateX(-40px)}to{transform:translateX(${w + 40}px)}}
+@media (prefers-reduced-motion: reduce){.lv,.sh{animation:none}}
+</style>
+<defs>
+<linearGradient id="cd-lane-g" gradientUnits="userSpaceOnUse" x1="0" x2="${w}"><stop offset="0" stop-color="${PLAN_G_LIGHT}"/><stop offset=".55" stop-color="${PLAN_G_MID}"/><stop offset="1" stop-color="${PLAN_G_DEEP}"/></linearGradient>
+<linearGradient id="cd-lane-s" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".5"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+<clipPath id="cd-lane-c"><rect width="${w}" height="${LANE_H}" rx="${LANE_H / 2}"/></clipPath>
+<clipPath id="cd-lane-b-${bx}-${bw}"><rect x="${bx}" width="${bw}" height="${LANE_H}" rx="${LANE_H / 2}"/></clipPath>
+</defs>
+<g clip-path="url(#cd-lane-c)"><rect class="k" width="${w}" height="${LANE_H}"/>
+<g opacity="${status === 'done' ? 0.7 : 1}"><rect x="${bx}" width="${bw}" height="${LANE_H}" rx="${LANE_H / 2}" fill="${fill}"/>
+<rect x="${bx}" width="${bw}" height="${LANE_H / 2}" rx="${LANE_H / 4}" fill="#fff" opacity=".25"/></g>
+${running ? `<g clip-path="url(#cd-lane-b-${bx}-${bw})"><rect class="lv" x="${bx}" width="${bw}" height="${LANE_H}" fill="${PLAN_G_MID}"/><rect class="sh" width="40" height="${LANE_H}" fill="url(#cd-lane-s)"/></g>` : ''}
+</g>
+</svg>`
+}
+
 /** A colour between `a` and `b`, both #rrggbb; `t` from 0 to 1: the terminal bar's gradient. */
 export function mixHex(a: string, b: string, t: number): string {
   const at = (h: string, i: number) => parseInt(h.slice(1 + i * 2, 3 + i * 2), 16)

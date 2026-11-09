@@ -83,7 +83,7 @@ import {
   tildePath,
   midCut,
 } from '../hooks/core'
-import { crabSvg, effortSvg, flowSvg, meterSvg } from '../hooks/draw'
+import { crabSvg, effortSvg, flowSvg, laneSvg, meterSvg } from '../hooks/draw'
 import type { Check, Msg } from '../types'
 
 // ---------------------------------------------------------------- pure behaviour
@@ -386,7 +386,9 @@ test('subagents become cards, then swimlanes past the card limit; a card expands
   for (const surface of ['terminal', 'desktop'] as const) {
     const lanesUi = await $.ui.mount({ ...pane(64), surface })
     expect(await lanesUi.find({ text: /4 total/ })).toBeDefined()
-    expect(await lanesUi.find({ text: /━/ })).toBeDefined()
+    // The terminal draws a lane in glyphs; a graphical surface draws it as an SVG bar.
+    if (surface === 'terminal') expect(await lanesUi.find({ text: /━/ })).toBeDefined()
+    else expect(svgsOf(await lanesUi.drawn()).some(n => /: (running|done)$/.test(String(n.props?.alt)))).toBe(true)
     await lanesUi.unmount()
   }
 })
@@ -1292,11 +1294,11 @@ test('a running connector keeps its length every frame: one face, clipped at its
       walk(tree)
       const line = texts.map(textOf).join('')
       // The box is the line's width and clips; its text is that width and four spare cells, every frame.
-      expect([tree.type, tree.props?.width, tree.props?.overflow]).toEqual(['Box', 64, 'hidden'])
-      expect(cellsOf(line)).toBe(64 + 4)
+      expect([tree.type, tree.props?.width, tree.props?.overflow]).toEqual(['Box', 60, 'hidden'])
+      expect(cellsOf(line)).toBe(60 + 4)
       expect(texts.every(t => t.props?.mono === true)).toBe(true)
       expect(/^[─●•┬┴]+$/.test(line)).toBe(true)
-      const head = [...line].slice(0, 64).indexOf('●')
+      const head = [...line].slice(0, 60).indexOf('●')
       if (head >= 0) heads.add(head)
       await ui.advance(110)
     }
@@ -1505,7 +1507,7 @@ test('a graphical surface draws the context meter and no second time axis; the t
     expect(alts.some(a => a.startsWith('context '))).toBe(true)
     // The lanes are the one time axis: the SVG copy under the log is gone.
     expect(alts.some(a => a.includes('time axis'))).toBe(false)
-    expect(await ui.find({ text: /━/ })).toBeDefined()
+    expect(svgsOf(await ui.drawn()).some(n => /: (running|done|failed)$/.test(String(n.props?.alt)))).toBe(true)
     // The busy session the width test draws holds both new panels.
     expect(await ui.find({ text: /checks · tests & builds/ })).toBeDefined()
     expect(await ui.find({ text: /^2 files edited since the last test run$/ })).toBeDefined()
@@ -1582,6 +1584,16 @@ test('edits are kept per file with who made them, and counted against the last r
   const many = Array.from({ length: 45 }, (_, i) => i).reduce((l, i) => noteFile(l, { path: `/f${i}`, by: 'main', at: i }), fs)
   expect(many.length).toBe(40)
   expect(many.some(f => f.path === '/f44')).toBe(true)
+})
+
+test('a lane bar sits on the shared axis: running glows, failed is red, done is dimmed', () => {
+  const geo = { before: 5, bar: 10, after: 5 }
+  const run = laneSvg(geo, 'running', 200)
+  expect(run).toContain('class="sh"')
+  expect(run).toContain('x="50" width="100"')
+  expect(laneSvg(geo, 'done', 200)).not.toContain('class="sh"')
+  expect(laneSvg(geo, 'done', 200)).toContain('opacity="0.7"')
+  expect(laneSvg(geo, 'failed', 200)).toContain('#ef4444')
 })
 
 test('a running crab animates in its own SVG; a still one draws one frame', () => {
