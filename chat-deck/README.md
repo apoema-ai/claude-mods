@@ -1,6 +1,6 @@
 # chat-deck
 
-**Version:** 0.13.1
+**Version:** 0.14.0
 
 A Claude Code mod (function hooks, Claude Code 2.1.287+) that keeps a live pane of the whole chat beside the transcript: the main model's vitals, every permission check, subagent cards, and the messages the main chat and its subagents send each other. Every number and line comes from a real session event, and nothing leaves your machine.
 
@@ -26,7 +26,7 @@ To try a clone for one session: `claude --plugin-dir <path to this folder>`.
 
 | Panel | Shows |
 |---|---|
-| main | Model, `● working` with the turn's clock (or `○ idle`), effort, the mode once it is known, a context meter, session cost, rate-limit windows, time to first token, and while a turn runs `this turn  N edits  N errors` |
+| main | Model, `● working` with the turn's clock (or `○ idle`), effort, the mode once it is known, a context meter, session cost, rate-limit windows and when each resets, the skills invoked, time to first token, and while a turn runs `this turn  N edits  N errors` |
 | **plan** | The task plan (from the plan-bar mod): the step in progress on top (`▸ <step>`, or the plan's title when none is) with `Tasks 2/5 +1 · 1 failed` at its right on graphical surfaces (beside the bar in a terminal), one segment per step, and under them one line, `this step 3m19s · <the last tool call> · <subagents running>`. `steps ▸` lists every step with its mark (`✓ ▸ ✗ ○`) and its time. Fed by the desktop app's task list, TodoWrite, TaskCreate / TaskUpdate, or the `mcp__chat-deck__plan` tool; saved to `~/.claude/mods-state/plan-<session>.json`. Hidden 20 s after the last step is done |
 | **checks** | The last build and test runs found in Bash output, with their counts, and `△ N files edited since the last test run` |
 | **git** | The session folder's branch, its PR number (`gh`), its path (cut in the middle, copied when pressed) and `± N uncommitted` or `✓ clean`. Outside a repository, the folder path alone |
@@ -103,6 +103,7 @@ It reads session events, and sends nothing of its own. It makes no tool calls. I
 
 ## Version History
 
+- **0.14.0**: The main card lists the skills the session has invoked (`skills  brainstorming · tdd`, last four, from `Skill` calls of the main chat) and, under the usage line, when each rate-limit window refills (`five_hour resets  in 3h10m · 14:32`, with the weekday once it is a day or more away).
 - **0.13.1**: The app's `wrap_up` checks the plan off, so a plan mirrored from the app's task list no longer stays in progress forever; with the steps open, a title cut from a short prompt ("Yes") gives way to the step in progress; a failed call's reason is red on its first row only, dim after, at most two rows.
 - **0.13.0** (2026-11-06): Tighter pane: the last turn and the files float to the shorter column with the gate and the architect, so the two columns end close together; the last request's speed shares the cost line; the last turn's counts sit in its header (errors get their own line only when there are some); comms messages take two lines each, top-aligned, with the route in a quiet colour and no replay hint; agent lanes give names up to half the row; the gate is titled `gate` and drops the check count its `all` filter already shows; with the steps open the plan header names the plan; the files header shows the edit count only when it differs from the file count.
 - **0.12.0** (2026-11-06): `/chat-deck open` is gone; plain `/chat-deck` opens the pane, and an unknown word shows the usage instead of opening it.

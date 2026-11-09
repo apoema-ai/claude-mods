@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.14.0
+
+- The main card lists the skills the session has invoked (`skills  brainstorming · tdd`, last four, from `Skill` calls of the main chat) and, under the usage line, when each rate-limit window refills (`five_hour resets  in 3h10m · 14:32`, with the weekday once it is a day or more away).
+
 ## 0.13.1
 
 - The app's `wrap_up` checks the plan off, so a plan mirrored from the app's task list no longer stays in progress forever; with the steps open, a title cut from a short prompt ("Yes") gives way to the step in progress; a failed call's reason is red on its first row only, dim after, at most two rows.

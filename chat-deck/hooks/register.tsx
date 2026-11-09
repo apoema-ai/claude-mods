@@ -166,6 +166,8 @@ const roster = atom({ plugin: 'chat-deck', key: 'roster' } as const, DEFAULT_ROS
 const runs = atom({ plugin: 'chat-deck', key: 'runs' } as const, [])
 const files = atom({ plugin: 'chat-deck', key: 'files' } as const, [])
 const git = atom({ plugin: 'chat-deck', key: 'git' } as const, DEFAULT_GIT)
+/** 0.14.0: the skills the session has invoked, oldest first. */
+const skills = atom({ plugin: 'chat-deck', key: 'skills' } as const, [])
 const planAtom = atom({ plugin: 'chat-deck', key: 'plan' } as const, null)
 const actAtom = atom({ plugin: 'chat-deck', key: 'planAct' } as const, null)
 
@@ -212,6 +214,9 @@ async function getRuns($: EngineInterface): Promise<TestRun[]> {
 }
 async function getFiles($: EngineInterface): Promise<FileTouch[]> {
   return normalizeFiles(await read($, files))
+}
+async function getSkills($: EngineInterface): Promise<string[]> {
+  return listOf<unknown>(await read($, skills)).filter((s): s is string => typeof s === 'string')
 }
 async function getGit($: EngineInterface): Promise<GitInfo> {
   return normalizeGit(await read($, git))
@@ -1255,6 +1260,14 @@ export const register: Register = (on, options) => {
       }
       return ran
     }
+    // A skill the main chat invoked stays listed in the main card for the session.
+    const skillName = String((e as unknown as { skill?: unknown }).skill ?? '').trim()
+    if (e.tool === 'Skill' && didRun && !e.agentId && skillName) {
+      await update($, skills, s => {
+        const l = listOf<string>(s)
+        return l.includes(skillName) ? l : [...l, skillName].slice(-20)
+      })
+    }
     if (e.tool === 'Agent') {
       if (isSettled) await refreshStatus($, cfg)
       return ran
@@ -1450,7 +1463,7 @@ export const register: Register = (on, options) => {
     const hasClient = 'Client' in els
     const hasRail = hasClient && !faulted.has(faultKey(e.surface, 'rail.tsx'))
     const hasClock = hasClient && !faulted.has(faultKey(e.surface, 'elapsed.tsx'))
-    const [m, u, a, g, cards, lp, lines, msgs, t, r, v, now, rs, fs, gi, storedPlan, planAct] = await Promise.all([
+    const [m, u, a, g, cards, lp, lines, msgs, t, r, v, now, rs, fs, gi, storedPlan, planAct, skillNames] = await Promise.all([
       getMain($),
       getUsage($),
       getArchitect($),
@@ -1468,6 +1481,7 @@ export const register: Register = (on, options) => {
       getGit($),
       getPlan($),
       getPlanAct($),
+      getSkills($),
     ])
     // The step in progress fills by its time against the finished steps', measured now.
     const pl = storedPlan && storedPlan.shown && storedPlan.steps.length > 0 ? withFrac(storedPlan, now) : null
@@ -1804,6 +1818,17 @@ export const register: Register = (on, options) => {
               ],
               w - 4,
             )
+          : null}
+        {/* 0.14.0: when each rate-limit window refills, as a clock time and the time left. */}
+        {u.limits.slice(0, 2).map(l => {
+          const left = fmtResetIn(l.resetsAt, now)
+          if (!left || !l.resetsAt) return null
+          const at = new Date(l.resetsAt)
+          const when = at.getTime() - now > 20 * 3_600_000 ? `${at.toLocaleDateString(undefined, { weekday: 'short' })} ${at.toTimeString().slice(0, 5)}` : at.toTimeString().slice(0, 5)
+          return line([{ spans: [{ text: `${limitLabel(l.kind)} resets`, dim: true }] }, { spans: [{ text: `in ${left}`, color: C.text }] }, { spans: [{ text: `· ${when}`, dim: true }] }], w - 4)
+        })}
+        {skillNames.length > 0
+          ? line([{ spans: [{ text: 'skills', dim: true }] }, { spans: [{ text: skillNames.slice(-4).join(' · ') + (skillNames.length > 4 ? ` +${skillNames.length - 4}` : ''), color: C.text }], fill: true }], w - 4)
           : null}
         {m.speed && u.costUsd === null && u.limits.length === 0 ? line([{ spans: [{ text: 'last req', dim: true }] }, { spans: [{ text: fmtSpeed(m.speed), dim: true }] }], w - 4) : null}
         {/* The turn in flight, named as such: its edits count every loop's, its errors the main loop's. */}
