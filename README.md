@@ -8,7 +8,7 @@ Everything runs locally, every number comes from a real session event, and every
 
 | Mod | In one line | Version |
 |---|---|---|
-| [chat-deck](chat-deck) | A live pane beside the transcript: vitals, plan, git, permission checks, subagent cards | 0.13.1 |
+| [chat-deck](chat-deck) | A live pane beside the transcript: vitals, plan, git, permission checks, subagent cards | 0.14.0 |
 | [cache-timer](cache-timer) | Counts down until the prompt cache goes cold, and can keep it warm | 0.14.1 |
 | [model-fit](model-fit) | Checks whether the model and effort fit the task, with a Switch button | 0.12.1 |
 | [chat-handoff](chat-handoff) | Writes a handoff of the whole chat so work continues in a fresh one | 0.9.1 |

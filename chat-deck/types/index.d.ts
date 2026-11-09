@@ -211,6 +211,8 @@ declare module 'claude-code' {
       runs: TestRun[]
       files: FileTouch[]
       git: GitInfo
+      /** Skills the session invoked, oldest first. Absent before 0.14.0. */
+      skills: string[]
     }
   }
 }
