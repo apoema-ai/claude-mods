@@ -1827,9 +1827,31 @@ export const register: Register = (on, options) => {
           const when = at.getTime() - now > 20 * 3_600_000 ? `${at.toLocaleDateString(undefined, { weekday: 'short' })} ${at.toTimeString().slice(0, 5)}` : at.toTimeString().slice(0, 5)
           return line([{ spans: [{ text: `${limitLabel(l.kind)} resets`, dim: true }] }, { spans: [{ text: `in ${left}`, color: C.text }] }, { spans: [{ text: `· ${when}`, dim: true }] }], w - 4)
         })}
-        {skillNames.length > 0
-          ? line([{ spans: [{ text: 'skills', dim: true }] }, { spans: [{ text: skillNames.slice(-4).join(' · ') + (skillNames.length > 4 ? ` +${skillNames.length - 4}` : ''), color: C.text }], fill: true }], w - 4)
-          : null}
+        {/* Every skill stays listed: names pack greedily into rows under the label instead of being cut off. */}
+        {(() => {
+          const rows: string[] = []
+          const room = Math.max(10, w - 4 - 7)
+          for (const name of skillNames) {
+            const last = rows[rows.length - 1]
+            if (last !== undefined && last.length + 3 + name.length <= room) rows[rows.length - 1] = `${last} · ${name}`
+            else rows.push(name)
+          }
+          if (rows.length === 0) return null
+          return (
+            <Box width={w - 4} columnGap={1} overflow="hidden">
+              <Box flexShrink={0}>
+                <Text dimColor>skills</Text>
+              </Box>
+              <Box flexDirection="column" flexGrow={1} flexShrink={1}>
+                {rows.map(r => (
+                  <Text color={C.text} wrap="truncate">
+                    {r}
+                  </Text>
+                ))}
+              </Box>
+            </Box>
+          )
+        })()}
         {m.speed && u.costUsd === null && u.limits.length === 0 ? line([{ spans: [{ text: 'last req', dim: true }] }, { spans: [{ text: fmtSpeed(m.speed), dim: true }] }], w - 4) : null}
         {/* The turn in flight, named as such: its edits count every loop's, its errors the main loop's. */}
         {m.isRunning
