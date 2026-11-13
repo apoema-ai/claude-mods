@@ -30,7 +30,7 @@ export const cut = (t: string, n: number) => (n <= 0 ? '' : t.length > n ? `${t.
 export const validLogin = (s: string) => /^[A-Za-z0-9-]{1,39}$/.test(s)
 
 export const QUERY = `query($q:String!){search(query:$q,type:ISSUE,first:50){nodes{... on PullRequest{
-number title url isDraft reviewDecision updatedAt repository{nameWithOwner} author{login}
+number title url isDraft reviewDecision updatedAt repository{nameWithOwner isArchived} author{login}
 reviewRequests(first:30){nodes{requestedReviewer{__typename ... on User{login} ... on Team{name}}}}
 latestReviews(first:30){nodes{state submittedAt author{__typename login}}}
 commits(last:1){nodes{commit{committedDate}}}}}}}`
@@ -41,7 +41,7 @@ type Node = Record<string, any>
 export function parsePrs(stdout: string): Pr[] {
   const nodes: Node[] = JSON.parse(stdout)?.data?.search?.nodes ?? []
   return nodes
-    .filter(x => x && typeof x.number === 'number')
+    .filter(x => x && typeof x.number === 'number' && x.repository?.isArchived !== true)
     .map(x => ({
       n: x.number,
       repo: String(x.repository?.nameWithOwner ?? ''),

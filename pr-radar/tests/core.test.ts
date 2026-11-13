@@ -33,6 +33,11 @@ test('parsePrs reads users and teams that are still asked, minus bots', () => {
   expect(p?.waiting).toEqual(['ana', 'core'])
 })
 
+test('parsePrs drops PRs on archived repos', () => {
+  const prs = parsePrs(reply(node(1), node(2, { repository: { nameWithOwner: 'o/old', isArchived: true } }), node(3, { repository: { nameWithOwner: 'o/r', isArchived: false } })))
+  expect(prs.map(p => p.n)).toEqual([1, 3])
+})
+
 test('parsePrs rejects text that is not JSON', () => {
   expect(() => parsePrs('boom')).toThrow()
 })
